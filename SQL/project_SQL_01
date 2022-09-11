@@ -1,0 +1,1929 @@
+Пора написать первый запрос. Выгрузите все данные из таблицы media_type
+
+-- напишите запрос тут
+SELECT *
+From media_type;
+
+
+Выгрузите все данные из таблицы playlist.
+-- напишите запрос тут
+SELECT *
+From playlist;
+
+Выведите все данные из таблицы invoice.
+SELECT *
+From invoice;
+
+Выгрузите из таблицы client поля email, first_name, last_name.
+SELECT email, 
+    first_name, 
+    last_name
+FROM client;
+
+
+Выгрузите первые четыре поля из таблицы invoice. Ограничьте выгрузку первыми пятью записями.
+SELECT invoice_id,
+    customer_id,
+    invoice_date,
+    billing_address          
+FROM invoice
+LIMIT 5;
+
+Выведите первые 20 записей из таблицы track. 
+Оставьте в итоговой таблице только два поля: name и unit_price.
+
+SELECT name,
+    unit_price
+FROM track
+LIMIT 20;
+
+Типы данных в PostgreSQL
+- Тип integer хранит целые числа от -2147483648 до +2147483647. Должно хватить
+так действительно написано в документации PostgreSQL. https://www.postgresql.org/docs/9.5/datatype.html
+- Тип real обозначает вещественные числа. У этого тип тоже есть псевдоним — float4.
+
+Символьные типы
+- Тип character содержит текст фиксированной длины. Его обозначают псевдонимом char(n). 
+На месте символа n может стоять любое число. Например, если вместо n подставить 4, строка 
+будет состоять только из четырёх символов. Больше нельзя, но меньше можно: недостающие 
+символы будут заполнены пробелами. Если не указывать n, его значение по умолчанию будет 1.
+- В тип character varying входят тексты нефиксированной длины. Его псевдоним — varchar(n). 
+Значение n управляет лимитом строки, но его можно не указывать.
+- Тип text содержит строку любой длины. Такого типа в стандарте SQL нет, но в 
+некоторых СУБД, помимо PostgreSQL, его тоже используют.
+
+Типы для работы с датой и временем
+- Тип timestamp содержит дату и время. Вы уже работали с датой в pandas и управляли 
+форматом с помощью специальных обозначений. В PostegreSQL тоже можно выбрать формат, 
+но чаще всего дату и время указывают в формате ISO: 'YYYY-MM-DD'. Например, 30 июня 2010 
+года записывается 2010-06-30.
+В PostgreSQL типов timestamp два: timestamp with time zone, который включает данные о 
+часовом поясе, и timestamp without time zone, который данных о часовом поясе не содержит.
+Часовые пояса указывают по стандарту UTC: '2004-10-19 10:23:54+02'. В часовом поясе UTC+2 
+находится, например, Калининград. Сравните со значением типа timestamp without time zone: 
+'2004-10-19 10:23:54'.
+По стандарту SQL тип timestamp по умолчанию подразумевает timestamp without time zone. 
+Для обозначения типа timestamp with time zone в PostgreSQL используют короткую форму 
+timestamptz.
+- В тип date входит только дата. Дату можно задавать в любом формате — главное, 
+выбрать нужный режим.
+- Тип time хранит только время и принимает значения от 00:00:00 до 24:00:00.
+- Тип interval используют для обозначения интервала между датами. Задать нужный интервал 
+можно с помощью условных обозначений или в свободной форме. Например, запись '1 12:59:10' 
+обозначает 1 день 12 часов 59 минут 10 секунд.
+
+Логические типы
+С булевыми значениями вы уже сталкивались. В PostgreSQL к типу boolean относят два 
+значения: TRUE и FALSE. Но эти значения можно указывать по-разному.
+- Для TRUE список аналогий такой: 'true', 't', 'yes', 'y', 'on', '1'.
+- Вместо FALSE можно написать: 'false', 'f', 'no', 'n', 'off', '0'.
+
+Выгрузите из таблицы track поля milliseconds и bytes. Оба поля должны быть строками. 
+Используйте тип данных для строк нефиксированной длины.
+
+SELECT CAST(milliseconds AS varchar),
+    CAST(bytes AS varchar)
+FROM track;
+
+Выгрузите из таблицы invoice поле total. Оставьте только целую часть числа.
+SELECT CAST(total AS int)
+FROM invoice;
+
+Выгрузите из таблицы staff дни рождения сотрудников. Необходимые значения в виде строк хранит поле birth_date. 
+Сформируйте запрос так, чтобы на экране отобразилась только дата.
+SELECT CAST(birth_date AS date)
+FROM staff;
+
+Из таблицы client выгрузите несколько полей: first_name с именем покупателя, 
+last_name с фамилией и city, в котором указан город проживания. Оставьте записи только о 
+тех покупателях, которые живут в Бразилии (англ. Brazil). 
+Страна проживания хранится в поле country.
+
+SELECT first_name, last_name, city
+FROM client
+WHERE country = 'Brazil';
+
+Нужно проверить, где и когда совершали самые крупные покупки. Из таблицы invoice 
+выгрузите поле billing_address, оно хранит адрес выставления счёта, и поле invoice_date с 
+датой покупки. Дата указана в формате 'YYYY-MM-DD HH:MM:SS', нужно оставить только дату 
+'YYYY-MM-DD'. 
+Отфильтруйте записи, в которых значение поля total больше или равно 8.
+
+SELECT billing_address, CAST(invoice_date AS date)
+FROM invoice
+WHERE total >= 8;
+
+Из таблицы invoice выгрузите поля total и customer_id. 
+Значение total должно быть больше или равно 5, 
+а значение customer_id должно равняться 40 или 46.
+
+SELECT total, customer_id
+FROM invoice
+WHERE total >= 5 AND (customer_id = 40 OR customer_id = 46);
+
+Теперь объедините условия. Из таблицы invoice выгрузите поля total и customer_id. 
+Счёт должен быть оформлен в Дублине (англ. Dublin), Лондоне (англ. London) или Париже 
+(англ. Paris). Значение total должно быть больше или равно 5, 
+а значение customer_id должно равняться 40 или 46.
+
+SELECT total, customer_id
+FROM invoice
+WHERE (billing_city = 'Dublin' OR billing_city = 'Paris' OR billing_city = 'London') AND
+    total >= 5 AND (customer_id = 40 OR customer_id = 46);
+	
+Из таблицы movie выгрузите названия фильмов, стоимость аренды которых не превышает 
+двух долларов, а срок аренды составляет больше шести дней. 
+Выгруженные фильмы не должны относиться к рейтингам PG и PG-13.
+
+SELECT title 
+FROM movie
+WHERE rental_rate <= 2 and rental_duration > 6 and (NOT rating = 'PG' and not rating = 'PG-13');
+
+Выгрузите адреса и города 
+оформления заказов, сделанных в сентябре 2009 года. Отберите данные о заказах, 
+оформленных во всех странах, кроме США и Бразилии. 
+Стоимость заказа должна быть больше двух долларов.
+
+SELECT billing_address, billing_city
+FROM invoice
+WHERE CAST(invoice_date AS date) >= '2009-09-01' and CAST(invoice_date AS date) < '2009-10-01'
+      and not billing_country = 'USA' and not billing_country = 'Brazil' and total >= 2;
+	  
+
+Выгрузите из таблицы playlist все названия плейлистов из поля name, 
+в которых есть подстрока 'Classic'.
+
+SELECT name
+FROM playlist
+WHERE name LIKE '%Classic%';
+
+Выгрузите из таблицы invoice адреса из поля billing_address и страну из поля 
+billing_country. Отфильтруйте данные по стране: оставьте только США (англ. USA), 
+Индию (англ. India), 
+Канаду (англ. Canada), Аргентину (англ. Argentina) и Францию (англ. France).
+
+SELECT billing_address, billing_country
+FROM invoice
+WHERE billing_country IN ('USA', 'India', 'Canada', 'Argentina', 'France');
+
+
+Дополните предыдущий запрос. Исключите из городов доставки billing_city Редмонд 
+(англ. Redmond), Лион (англ. Lyon) и Дели (англ. Delhi). 
+Само поле billing_city выводить не нужно.
+
+SELECT billing_address,
+       billing_country
+FROM invoice
+WHERE billing_country IN ('USA',
+                          'India',
+                          'Canada',
+                          'Argentina',
+                          'France')
+		  AND billing_city NOT IN ('Redmond', 'Lyon', 'Delhi');
+		  
+		  
+Выгрузите все поля из таблицы invoice. Информацию о дате покупки хранит поле invoice_date: выберите только те заказы, 
+которые были оформлены в период с '2009-03-04' по '2012-02-09' включительно. Обратите 
+внимание, что у поля invoice_date тип данных varchar.
+Сумма покупки total должна быть меньше 5. Кроме того, исключите из запроса Канаду 
+(англ. Canada), Бразилию (англ. Brazil) и Финляндию (англ. Finland). Название страны 
+содержит поле billing_country.
+
+SELECT *
+FROM invoice
+WHERE CAST(invoice_date AS date) BETWEEN '2009-03-04' AND '2012-02-09' 
+    and total < 5 
+    and billing_country NOT IN ('Canada', 'Brazil', 'Finland');
+	
+Выгрузите из таблицы movie название фильмов, описание которых заканчивается 
+подстрокой Mexico. Аренда фильмов из итоговой таблицы должна составлять 
+меньше двух долларов либо их рейтинг не должен быть PG-13.
+
+SELECT title
+FROM movie
+WHERE description LIKE '%Mexico' and (rental_rate < 2 OR rating <>'PG-13');
+
+
+Из таблицы с треками отберите названия композиций, которые соответствуют условиям. 
+В итоговую таблицу должны войти:
+треки длиннее 300000 миллисекунд, в создании которых принимал участие Bono, 
+с идентификаторами жанра 7, 8, 9, 10;
+либо треки, размер которых превышает 1000000000 байт.
+
+SELECT name
+FROM track
+WHERE (milliseconds > 300000 
+    and composer LIKE '%Bono%' 
+    and genre_id BETWEEN 7 and 10)
+    OR bytes > 1000000000;
+	
+Операторы и функции для работы с датой и временем
+
+CURRENT_DATE вернёт текущую дату.
+CURRENT_TIME выведет текущее время.
+CURRENT_TIMESTAMP вернёт текущие дату и время.
+
+SELECT CURRENT_DATE;
+
+Для таких случаев в PostegreSQL используют функцию DATE_TRUNC. Функция DATE_TRUNC «усекает» дату и время до необходимого значения: года, месяца или дня. 
+Синтаксис функции такой: DATE_TRUNC('отрезок времени', поле).
+
+'microseconds' — микросекунды;
+'milliseconds' — миллисекунды;
+'second' — секунда;
+'minute' — минута;
+'hour' — час;
+'day' — день;
+'week' — неделя;
+'month' — месяц;
+'quarter' — квартал;
+'year' — год;
+'decade' — декада года;
+'century' — век.
+
+Такое усечение не подойдёт для случаев, когда нужно получить конкретную часть даты: 
+год, месяц или минуту. Для таких задач используют функцию EXTRACT. Её синтаксис 
+отличается от функции DATE_TRUNC:EXTRACT(отрезок времени FROM поле).
+Одинарные кавычки для значений внутри EXTRACT не нужны. Отрезок времени может 
+быть представлен следующими значениями:
+CENTURY — век;
+DAY — день;
+DOY (от англ. day of the year) — день года, выраженный числом от 1 до 365 или 366, 
+если год високосный;
+DOW (от англ. day of the week) — день недели, выраженный числом от 0 до 6, где 
+понедельник — 1, воскресенье — 0.
+ISODOW (от англ. day of the week и ISO 8601) — день недели, выраженный числом от 1 до 7, 
+где понедельник — 1, воскресенье — 7.
+HOUR — час;
+MILLISECOND — миллисекунда;
+MINUTE — минута;
+MONTH — месяц;
+SECOND — секунда;
+QUARTER — квартал;
+WEEK — неделя в году;
+YEAR — год.
+
+Функции DATE_TRUNC и EXTRACT принимают на вход данные тех типов, 
+которые используют для работы с датой и временем. Но есть особенности. 
+Типы date и time функции автоматически переведут в timestamp with time zone. 
+Будьте осторожны: при автоматическом переводе date в timestamp with time zone 
+время подстроится к часовому поясу пользователя и потому может сместиться.
+У этой проблемы есть решение — явно изменить тип данных на timestamp. Напомним, 
+что в SQL так по умолчанию обозначается тип timestamp without time zone. С типом 
+данных без часового пояса время не сместится.
+Другая особенность функций — они возвращают данные разных типов. DATE_TRUNC вернёт 
+данные типов timestamp или interval, а EXTRACT — данные типа double precision.
+С типом double precision вы ещё не знакомы. Его используют для вещественных чисел, 
+как и тип real. Отличие в том, что в тип double precision входят числа большего диапазона. 
+Его псевдоним — float8. Напомним, что число на конце псевдонима обозначает, сколько байт 
+занимает тип. Тип real, например, занимает 4 байта, его псевдоним — float4.
+
+Теперь можно вернуться к работе с датой. 
+
+Добавьте условие в код задания: выгрузите из таблицы invoice несколько полей, 
+в которых указаны идентификаторы покупателей от 20 до 50 включительно.
+
+SELECT customer_id,
+       invoice_date,
+       total
+FROM invoice
+WHERE customer_id between 20 and 50;
+
+Добавьте к выгруженным полям информацию о месяце и неделе заказа. 
+Информацию о дате хранит поле invoice_date. Месяц заказа должен быть представлен 
+первым числом месяца в формате 
+'2009-01-01 00:00:00', а неделя заказа — номером недели.
+Не забудьте изменить тип данных поля invoice_date, чтобы применить функции для работы с 
+датой. Поменяйте тип данных поля на timestamp. Тогда данные не исказятся от 
+автоматической поправки на часовой пояс.
+
+
+SELECT customer_id,
+       invoice_date,
+       total,
+       DATE_TRUNC('month', CAST(invoice_date AS timestamp)),
+       EXTRACT(WEEK FROM CAST(invoice_date AS timestamp))
+FROM invoice
+WHERE customer_id BETWEEN 20 AND 50;
+
+Отфильтруйте получившуюся таблицу по номерам недели. 
+Оставьте в таблице данные за 5, 7, 10, 33 и 48 недели.
+
+SELECT customer_id,
+       invoice_date,
+       total,
+       DATE_TRUNC('month', CAST(invoice_date AS timestamp)),
+       EXTRACT(WEEK FROM CAST(invoice_date AS timestamp))
+FROM invoice
+WHERE customer_id BETWEEN 20 AND 50 
+    and EXTRACT(WEEK FROM CAST(invoice_date AS timestamp)) in (5, 7, 10, 33, 48);
+	
+
+Выгрузите из таблицы invoice всю информацию о заказах, оформленных первого числа 
+каждого месяца. 
+Не забудьте привести дату к типу timestamp.
+
+SELECT *
+FROM invoice
+WHERE CAST(invoice_date AS timestamp) = DATE_TRUNC('month', CAST(invoice_date AS timestamp));
+
+SELECT *
+FROM invoice
+WHERE EXTRACT(DAY FROM CAST(invoice_date AS timestamp)) = 1;
+
+
+Выгрузите адреса электронной почты сотрудников из города Калгари (англ. Calgary), которых наняли на работу в 2002 году.
+
+SELECT email
+FROM staff
+WHERE city = 'Calgary' and EXTRACT(YEAR FROM CAST(hire_date AS timestamp)) = 2002;
+
+Выделите категории в таблице staff, которая хранит информацию о сотрудниках. Выведите на экран поля last_name, first_name и title. 
+Категории нужно выделить на основе значений в поле title — оно содержит информацию о должности сотрудника:
+Если в title встречается слово 'IT', в новом поле будет отображена категория 'разработка'.
+Если в title встречается слово 'Manager' и нет слова 'IT', в новом поле отобразится категория 'отдел продаж'.
+Если в title встречается слово 'Support', в новом поле появится категория 'поддержка'.
+
+SELECT last_name, first_name, title, 
+    CASE
+        WHEN title LIKE '%IT%' THEN 'разработка'
+        WHEN title LIKE '%Manager%' AND title NOT LIKE '%IT%' THEN 'отдел продаж'
+        WHEN title LIKE '%Support%' THEN 'поддержка'
+    END
+FROM staff;
+
+
+Теперь попробуйте разделить на категории фильмы из таблицы movie. Выведите на экран поля title и rental_rate. Выделить категории нужно по цене аренды фильма:
+Если значение rental_rate меньше 1, в новом поле появится категория 'категория 1'.
+Если значение rental_rate больше либо равно 1, но меньше 3, в новом поле отобразится категория 'категория 2'.
+Если значение rental_rate больше либо равно 3, в новом поле появится категория 'категория 3'.
+
+SELECT  title, rental_rate,
+    CASE
+        WHEN rental_rate < 1 THEN 'категория 1'
+        WHEN rental_rate >= 1 and rental_rate < 3 THEN 'категория 2'
+        WHEN rental_rate >= 3 THEN 'категория 3'
+    END
+FROM movie;
+
+Работа с пропусками
+
+Из таблицы invoice выгрузите поле billing_city с городами оформления счёта. 
+Выгрузите только те записи, в которых на месте индекса стоит пропуск. Данные с индексами хранит поле billing_postal_code.
+
+SELECT billing_city
+FROM invoice
+WHERE billing_postal_code IS NULL;
+
+Дополните предыдущий запрос. Исключите из выдачи записи с пропусками в поле billing_state. Выберите записи, в которых сумма заказа в поле total не ниже 15 долларов.
+
+SELECT billing_city
+FROM invoice
+WHERE billing_postal_code IS NULL
+    and billing_state IS NOT NULL
+    and total > 15;
+	
+
+Найдите треки длиннее 250000 миллисекунд, в названии которых есть слово Moon, но автор трека не указан.
+Выгрузите номера альбомов, в которых находятся выбранные треки.
+
+SELECT album_id
+FROM track
+WHERE milliseconds > 250000 and name LIKE '%Moon%' and composer IS NULL;
+
+Отобразите имена, фамилии и страну выставления счёта для покупателей, которые не указали информацию о месте работы, регионе проживания, а также телефон и факс.
+
+SELECT first_name, last_name, country
+FROM client
+WHERE company IS NULL and state IS NULL and phone IS NULL and fax IS NULL;
+
+
+Условия из запроса можно переписать так: (release_year > 2010 AND rental_duration > 4) OR (rental_duration < 5 AND length > 90). 
+Представьте, что вместо оператора AND стоит знак *, а вместо OR — +. Сначала выполняется умножение, за ним сложение. Так и в SQL: 
+у разных логических операторов свой приоритет выполнения. 
+Первым всегда выполняется условие с оператором NOT, за ним AND и только в последнюю очередь — условие с OR.
+
+SELECT *
+FROM movie
+WHERE release_year > 2010
+  AND rental_duration > 4
+  OR rental_duration < 5
+  AND length > 90; 
+
+Перед тем как применить агрегирующие функции, нужно получить срез данных. Выгрузите все поля из таблицы invoice, выберите записи о заказах, оформленных в сентябре.
+Информацию о дате заказа содержит поле invoice_date. Тип данных поля — varchar. Не забудьте про функции для работы с датой.
+
+SELECT *
+FROM invoice
+WHERE EXTRACT(MONTH FROM CAST(invoice_date AS timestamp)) = 9;
+
+
+Оставьте в таблице поля с идентификатором покупателя (поле customer_id), 
+датой заказа без времени (поле invoice_date) и суммой заказа (поле total). Выберите покупателей с идентификаторами 11, 13, 44, 36, 48, 52, 54, 56.
+
+SELECT customer_id, CAST(invoice_date AS date), total
+FROM invoice
+WHERE customer_id in (11, 13, 44, 36, 48, 52, 54, 56) and EXTRACT(MONTH FROM CAST(invoice_date AS timestamp)) = 9;
+
+Дополните запрос. Найдите минимальное и максимальное значения поля total. Условия для среза остаются прежними.
+
+SELECT MIN(total), MAX(total)
+FROM invoice
+WHERE EXTRACT(MONTH FROM CAST(invoice_date AS timestamp)) = 9
+  AND customer_id in (11, 13, 44, 36, 48, 52, 54, 56);
+  
+
+Добавьте к минимуму и максимуму несколько новых полей:
+среднее значение поля total, округлённое до ближайшего числа;
+количество уникальных идентификаторов покупателей из поля customer_id;
+суммарная выручка.
+Не меняйте условия для среза данных.
+
+SELECT MIN(total),
+       MAX(total),
+       ROUND(AVG(total)),
+       COUNT(DISTINCT(customer_id)), 
+       SUM(total)
+FROM invoice
+WHERE EXTRACT(MONTH FROM CAST(invoice_date AS timestamp)) = 9
+  AND customer_id in (11, 13, 44, 36, 48, 52, 54, 56);
+  
+Посчитайте, сколько пропусков содержит поле fax из таблицы client
+
+SELECT count(*) - COUNT(fax)
+FROM client;
+
+Посчитайте среднюю стоимость заказов, оформленных в понедельник
+
+SELECT AVG(total)
+FROM invoice
+WHERE EXTRACT(ISODOW FROM CAST(invoice_date AS timestamp)) = 1;
+
+Проверьте, какую выручку в среднем приносит каждый покупатель. Выгрузите общую сумму выручки, число уникальных покупателей (поле customer_id) и среднюю выручку на уникального пользователя для страны США.
+
+SELECT SUM(total), COUNT(DISTINCT(customer_id)), SUM(total)/COUNT(DISTINCT(customer_id))
+FROM invoice
+WHERE billing_country = 'USA';
+
+Дополните предыдущий запрос. Сгруппируйте данные по неделе заказа. Для этого нужно усечь дату из поля invoice_date до недели. Обратите внимание, поле invoice_date хранит данные типа varchar.
+
+SELECT DATE_TRUNC('WEEK', CAST(invoice_date AS timestamp)),
+       SUM(total),
+	   COUNT(DISTINCT customer_id),
+	   SUM(total)/COUNT(DISTINCT customer_id)
+FROM invoice
+WHERE billing_country = 'USA'
+GROUP BY DATE_TRUNC('WEEK', CAST(invoice_date AS timestamp));
+
+SELECT EXTRACT(WEEK FROM CAST(invoice_date AS timestamp)),
+       SUM(total),
+	   COUNT(DISTINCT customer_id),
+	   SUM(total)/COUNT(DISTINCT customer_id)
+FROM invoice
+WHERE billing_country = 'USA'
+GROUP BY EXTRACT(WEEK FROM CAST(invoice_date AS timestamp));
+
+
+Посчитайте, сколько пользователей с почтовыми доменами yahoo и gmail обслужил каждый сотрудник. В итоговой таблице должны быть два поля:
+идентификатор сотрудника,
+количество пользователей.
+
+SELECT support_rep_id, COUNT(customer_id)
+FROM client
+WHERE email LIKE '%yahoo%' OR email LIKE '%gmail%'
+GROUP BY support_rep_id;
+
+
+Создайте новое поле с категориями:
+заказы на сумму меньше одного доллара получат категорию 'low cost';
+заказы на сумму от одного доллара и выше получат категорию 'high cost'.
+Для каждой категории посчитайте сумму значений в поле total, но только для тех заказов, 
+при оформлении которых указан почтовый код. В итоговую таблицу должны войти только два поля.
+
+SELECT 
+    CASE 
+        WHEN total < 1 THEN 'low cost'
+        WHEN total >= 1 THEN 'high cost'
+    END,
+    SUM(total)
+FROM invoice
+WHERE billing_postal_code IS NOT NULL
+GROUP BY 
+    CASE 
+        WHEN total < 1 THEN 'low cost'
+        WHEN total >= 1 THEN 'high cost'
+    END;
+
+Отберите пять самых крупных заказов из таблицы invoice
+
+SELECT *
+FROM invoice
+ORDER BY total DESC
+LIMIT 5;
+
+Отберите пятерых самых активных клиентов в США с 25 мая 2011 по 25 сентября 2011. 
+Дату хранит поле invoice_date, тип данных поля — varchar.
+
+SELECT customer_id,
+       COUNT(customer_id)
+FROM invoice
+WHERE billing_country = 'USA' and CAST(invoice_date AS date) >= '2011.05.25' and CAST(invoice_date AS date) <= '2011.09.25'
+GROUP BY customer_id
+ORDER BY count(invoice_id) DESC
+LIMIT 5;
+
+Нужно посмотреть продажи по годам. Выгрузите таблицу, в которую войдут:
+год покупки;
+минимальная сумма заказа;
+максимальная сумма заказа;
+общая сумма выручки;
+количество заказов;
+средняя выручка на уникального покупателя, округлённая до ближайшего целого числа.
+Отсортируйте таблицу по году от большего к меньшему. Отберите только те записи, в которых в 
+поле billing_country указаны страны: США (англ. USA), Великобритания (англ. United Kingdom) и Германия (англ. Germany).
+
+SELECT EXTRACT(YEAR FROM CAST(invoice_date AS timestamp)),
+    MIN(total),
+    MAX(total),
+    SUM(total),
+    COUNT(invoice_id),
+    ROUND(SUM(total)/COUNT(DISTINCT customer_id))
+FROM invoice
+WHERE billing_country IN ('USA', 'United Kingdom', 'Germany')
+GROUP BY EXTRACT(YEAR FROM CAST(invoice_date AS timestamp))
+ORDER BY EXTRACT(YEAR FROM CAST(invoice_date AS timestamp)) DESC;
+
+Группировка и сортировка по нескольким полям
+
+Оператор HAVING
+
+Данные сгруппировали по идентификатору покупателя и посчитали сумму выручки на каждого клиента. 
+А что делать, если после группировки нужно оставить только те записи, в которых значение SUM(total) больше 41
+
+SELECT customer_id,
+       SUM(total)
+FROM invoice
+GROUP BY customer_id
+HAVING SUM(total) > 41 AND AVG(total) > 7
+ORDER BY SUM(total) DESC; 
+
+Сравните фильмы разных возрастных рейтингов. Найдите среднее значение цены аренды фильма в поле rental_rate для каждого рейтинга (поле rating). 
+Оставьте в таблице только те записи, в которых среднее значение rental_rate больше 3.
+
+SELECT rating, AVG(rental_rate)
+FROM movie
+GROUP BY rating
+HAVING AVG(rental_rate) > 3;
+
+Изучите заказы, которые оформили в сентябре 2011 года. Сравните общую сумму выручки (поле total) за каждый день этого месяца: выведите день в формате '2011-09-01' и сумму. 
+Информацию о дате заказа хранит поле invoice_date. 
+Не забудьте изменить тип данных в этом поле, чтобы использовать операторы для работы с датой. Оставьте в таблице только те значения суммы, которые больше 1 и меньше 10.
+
+SELECT CAST(invoice_date AS date), SUM(total)
+FROM invoice
+WHERE CAST(invoice_date AS date) between '2011-09-01' and '2011-09-30'
+GROUP BY CAST(invoice_date AS date)
+HAVING SUM(total) > 1 and SUM(total) < 10;
+
+Посчитайте пропуски в поле с почтовым индексом billing_postal_code для каждой страны (поле billing_country). Получите срез: в таблицу должны войти только те записи, 
+в которых поле billing_address содержит слова Street, Way, Road или Drive. Отобразите в таблице страну и число пропусков, если их больше 6.
+
+SELECT billing_country, COUNT(*) - COUNT(billing_postal_code)
+FROM invoice
+WHERE billing_address LIKE '%Street%' 
+    OR billing_address LIKE '%Way%'
+    OR billing_address LIKE '%Road%' 
+    OR billing_address LIKE '%Drive%'
+GROUP BY billing_country
+HAVING (COUNT(*) - COUNT(billing_postal_code)) > 6;
+
+Взаимоотношения между таблицами. Типы объединения таблиц
+
+Связь «один к одному»
+В английском языке такую связь называют ”one-to-one”. Такой вид связи предполагает, что одна запись первой таблицы связана только с одной записью другой таблицы.
+Приведём пример. Таблица staff хранит данные обо всех сотрудниках. Можно создать несколько других таблиц, которые объединят сотрудников из одного отдела. 
+Например, в одну таблицу войдут все разработчики, в другую — все сотрудники поддержки. Таблица с разработчиками будет связана с таблицей staff связью «один к одному»: 
+одна запись о сотруднике из отдела разработки соответствует одной записи о том же сотруднике в таблице staff. То же самое с таблицей отдела поддержки.
+Такой вид связи даёт мало преимуществ, поэтому его используют редко. И неудивительно: данные из таких таблиц лучше объединить в одну. Например, можно добавить поле 
+с отделом в таблицу staff.
+
+Связь «один ко многим»
+Этот вид связи, наоборот, самый популярный. Иногда его обозначают ”one-to-many”.
+Такой вид связи предполагает, что одной записи первой таблицы соответствует несколько записей другой таблицы. Таблицы invoice и client связаны именно таким способом. 
+В таблице client может быть только один уникальный пользователь, но в таблице invoice один пользователь может встречаться несколько раз — в зависимости от количества 
+оформленных заказов.
+
+Связь «многие ко многим»
+Другое название связи — ”many-to-many”. Этот вид связи предполагает, что одна запись одной таблицы соответствует нескольким записям другой таблицы и наоборот. 
+Кажется, такой вид связи напоминает «один ко многим», но это не так.
+Например, в одной таблице указаны все школьные предметы, а в другой — преподаватели. Один преподаватель может вести несколько предметов, а у одного предмета несколько 
+преподавателей.
+Реализовать такую связь может быть сложно. Представьте, что вы проектируете базу данных для школы и вам нужно связать таблицу с предметами и таблицу с преподавателями. 
+Работать с такими таблицами будет неудобно, ведь каждому предмету соответствует несколько идентификаторов преподавателей. Придётся отбирать нужные идентификаторы, чтобы 
+составить расписание или рассчитать нагрузку преподавателей.
+
+Выгрузите таблицу, в которую войдут (именно в таком порядке):
+поле с количеством покупок, которое будет названо total_purhases;
+поле с общей выручкой — total_revenue;
+поле со средним значением выручки, округлённым до двух знаков после запятой, — average_revenue.
+Сгруппируйте данные по стране заказа — billing_country. Отсортируйте данные по значению в поле average_revenue от большего к меньшему. 
+Ограничьте вывод первыми десятью записями.
+
+SELECT COUNT(*) total_purchases,
+    SUM(total) total_revenue,
+    ROUND(AVG(total), 2) average_revenue,
+    billing_country
+FROM invoice
+GROUP BY billing_country
+ORDER BY average_revenue DESC
+LIMIT 10;
+
+rating_of_epic с рейтингом фильма;
+year_of_epic с годом выхода фильма;
+average_rental со средним сроком аренды.
+Сгруппируйте данные по рейтингу и году выхода фильма.
+
+SELECT rating AS rating_of_epic,
+    release_year AS year_of_epic,
+    AVG(rental_duration) AS average_rental
+FROM movie
+WHERE description LIKE '%Epic%'
+GROUP BY rating_of_epic, year_of_epic;
+
+Разделите фильмы на категории:
+'без ограничений' — если у фильма рейтинг G.
+'с ограничениями' — если у фильма любой рейтинг, кроме G.
+Новое поле с категориями назовите new_rating. Сгруппируйте данные по новому полю и посчитайте суммарную цену аренды фильмов для каждой категории.
+
+SELECT
+    CASE
+        WHEN rating = 'G' THEN 'без ограничений'
+        WHEN rating != 'G' THEN 'с ограничениями'
+    END new_rating,
+    SUM(rental_rate)
+FROM movie
+GROUP BY new_rating;
+
+Операторы JOIN. Типы объединения таблиц
+
+Тип INNER JOIN предполагает объединение по «внутренней» области, общей для двух таблиц. Покажем на примере 
+таблиц с фамилией покупателей и числом покупок. Объединить две таблицы можно с помощью общего поля ID_покупателя. Если использовать оператор INNER JOIN, таблица 
+сложится из совпадающих значений в поле ID_покупателя в обеих таблицах.
+Значение ID_покупателя, равное 667, присутствует в обеих таблицах. Поэтому фамилия из первой таблицы объединяется с числом покупок из второй.
+То же самое происходит с другими покупателями, если значение в поле ID_покупателя встречается в обеих таблицах. Но не все покупатели вошли в финальную таблицу — в том случае, 
+если идентификаторы не совпали.
+
+LEFT OUTER JOIN — тип объединения, который предполагает, что в результат слияния войдут все записи из левой таблицы. Записи из правой таблицы сохранятся только в том случае, 
+если значения в нужном поле совпадают со значениями в левой таблице.
+Таблица слева содержит информацию о фамилиях покупателя, поэтому все эти данные вошли в финальную таблицу. Для некоторых фамилий не нашлось совпадений в правой таблице, 
+поэтому в поле Число покупок будет значение NULL. Данные о покупателях с идентификаторами 111, 221 и 456 в результат слияния не войдут, ведь таких значений нет в левой таблице.
+
+Тип RIGHT OUTER JOIN похож на предыдущий тип объединения, только в этом случае больший приоритет у правой таблицы. Оператор RIGHT OUTER JOIN предполагает, 
+что записи из правой таблицы обязательно войдут в результат слияния. А записи из левой таблицы сохранятся только в том случае, если значения в нужном поле совпадают со значениями в правой таблице. 
+На месте некоторых фамилий указано значение NULL — в том случае, если нужных данных в левой таблице нет.
+
+Оператор FULL OUTER JOIN объединяет все данные из левой и правой таблиц. Если не нашлось совпадения, на месте значения будет NULL.
+
+
+Оператор INNER JOIN
+
+Этот урок посвятим оператору INNER JOIN. Первая задача — составить список из десяти покупателей, которые оформили самые крупные заказы в США. В таблицу должны войти фамилии 
+пользователей, но не их идентификаторы.
+Если пользователь при оформлении заказа не указал фамилию, такой пользователь в таблицу не войдёт. И наоборот: если пользователь зарегистрировался, но ещё не сделал ни одного заказа, 
+такого пользователя следует исключить из финальной таблицы.
+Напомним, что таблица invoice содержит информацию о заказах, а таблица client хранит данные о пользователях: их фамилии, имена и адреса. Таблица client связана с таблицей invoice 
+полем customer_id, в котором указан идентификатор покупателя. В таблице client это поле — первичный ключ, а в таблице invoice — внешний.
+Теперь можно приступить к задаче. Для того чтобы получить список из фамилий покупателей с самыми крупными заказами, понадобится информация из обеих таблиц: invoice и client.
+Перед тем как объединить таблицы, нужно решить, какой тип объединения использовать. Неизвестно, для каждой ли записи в таблице client найдётся соответствие в таблице с заказами invoice. 
+В прошлом уроке вы узнали, что тип объединения INNER JOIN включит в итоговую таблицу только те данные, которые являются общими для двух таблиц. 
+Если нужно исключить фамилии пользователей без заказов и идентификаторы пользователей без фамилий — оператор INNER JOIN подойдёт.
+
+
+Нужно объединить данные двух таблиц: track и invoice_line. Таблица track хранит информацию о музыкальных треках в магазине, названия треков указаны в поле name. 
+Таблица invoice_line содержит данные о купленных треках, их стоимость указана в поле unit_price. В обеих таблицах есть поле track_id — в нём содержатся идентификаторы 
+музыкальных треков.
+Выгрузите таблицу, в которой названию трека будет соответствовать его стоимость. Отберите все уникальные записи. Если какой-либо из треков не покупали или у купленного 
+трека нет названия — такие записи не должны войти в таблицу. Оставьте в итоговой таблице первые 20 записей.
+
+SELECT t.name,
+	   i.unit_price
+FROM track AS t
+JOIN invoice_line AS i ON i.track_id =t.track_id
+GROUP BY t.name, i.unit_price
+LIMIT 20;
+
+Нужно дополнить запрос: добавьте поле с идентификатором плейлиста playlist_id. Такое поле можно получить из таблицы playlist_track. 
+В этой таблице собраны идентификаторы плейлистов и треков (поле track_id). 
+Условие остаётся прежним: если идентификаторы треков не совпадают во всех трёх таблицах, такие треки не должны войти в итоговую таблицу. Выведите первые 20 записей.
+
+SELECT t.name,
+       i.unit_price,
+       p.playlist_id
+FROM track AS t
+INNER JOIN invoice_line AS i ON t.track_id=i.track_id
+INNER JOIN playlist_track AS p ON p.track_id=t.track_id
+LIMIT 20;
+
+Идентификатор плейлиста теперь указан в итоговой таблице. Но что это за плейлисты — непонятно. Эту информацию можно взять в четвёртой таблице — playlist. 
+Таблица содержит поле playlist_id с идентификатором плейлиста и поле name — с его названием. 
+Добавьте в итоговую таблицу поле name. Условия те же: данные без совпадения не должны попасть в таблицу. Ограничьте вывод первыми 20 записями.
+
+
+SELECT t.name,
+       i.unit_price,
+       pt.playlist_id,
+       p.name
+FROM track AS t
+INNER JOIN invoice_line AS i ON t.track_id=i.track_id
+INNER JOIN playlist_track AS pt ON t.track_id=pt.track_id
+INNER JOIN playlist AS p ON p.playlist_id=pt.playlist_id
+LIMIT 20;
+
+Теперь проанализируйте получившуюся таблицу. Нужно посчитать суммарную стоимость треков для каждого плейлиста. Отобразите в таблице два поля: 
+playlist_name с названием плейлиста и total_revenue с суммарной стоимостью. Отсортируйте данные по значению в поле total_revenue от большего к меньшему.
+
+SELECT p.name AS playlist_name,
+    SUM(i.unit_price) AS total_revenue 
+FROM track AS t
+INNER JOIN invoice_line AS i ON t.track_id=i.track_id
+INNER JOIN playlist_track AS pl ON t.track_id=pl.track_id
+INNER JOIN playlist AS p ON pl.playlist_id = p.playlist_id
+GROUP BY playlist_name
+ORDER BY total_revenue DESC;
+
+Массовую любовь к музыке 90-х можно понять. А как обстоит дело с жанрами — какие популярнее? Сгруппируйте данные по жанрам и посчитайте количество заказов. 
+Выведите на экран два поля: одно с названием жанра, второе — с количеством купленных треков в этом жанре. Отсортируйте таблицу по убыванию количества заказов.
+
+SELECT g.name, COUNT(i.invoice_id)
+FROM genre as g
+INNER JOIN track AS t ON t.genre_id = g.genre_id
+INNER JOIN invoice_line AS inv ON t.track_id = inv.track_id
+INNER JOIN invoice AS i ON i.invoice_id = inv.invoice_id
+GROUP BY g.name
+ORDER BY COUNT(i.invoice_id) DESC;
+
+Отберите уникальные категории фильмов, в которых снималась Ума Вуд (англ. Uma Wood).
+
+SELECT c.name
+FROM category AS c
+JOIN film_category as fc ON c.category_id = fc.category_id
+JOIN film_actor as fa ON fa.film_id = fc.film_id
+JOIN actor as a ON fa.actor_id = a.actor_id
+WHERE a.first_name = 'Uma' and a.last_name = 'Wood'
+GROUP BY c.name;
+
+Операторы LEFT OUTER JOIN и RIGHT OUTER JOIN
+
+С операторами LEFT OUTER JOIN и RIGHT OUTER JOIN вы уже знакомы. Напомним: оператор LEFT OUTER JOIN предполагает, что в результат слияния обязательно 
+войдут все записи из левой таблицы. Записи из правой таблицы сохранятся только в том случае, если значения в поле, по которому происходит объединение, совпадают со значениями в левой таблице. 
+Оператор RIGHT OUTER JOIN устроен аналогичным образом, но большим приоритетом обладает правая таблица.
+
+Теперь к практике: нужно объединить данные таблиц artist и album и вывести всех исполнителей, добавив информацию об их музыкальных альбомах.
+Таблица artist хранит информацию об исполнителях и содержит поле artist_id с идентификатором и поле name с именем исполнителя. Таблица album 
+содержит данные о музыкальных альбомах и включает в себя поля album_id и title с идентификатором альбома и его названием соответственно, а также поле artist_id с 
+идентификатором исполнителя.
+Таблицы artist и album связаны по ключу artist_id, и связь между ними — «один к многим», ведь одному исполнителю может соответствовать несколько музыкальных альбомов.
+Раз нужно вывести данные обо всех исполнителях, оператор INNER JOIN не подойдёт: в таком случае исполнители без альбома в итоговую таблицу не попадут. Если использовать 
+тип LEFT OUTER JOIN, все исполнители попадут в выдачу.
+Чтобы объединить таблицы, нужно указать подходящий оператор: LEFT OUTER JOIN или сокращённую версию LEFT JOIN.
+
+Выведите данные обо всех треках, добавив информацию о датах, в которые эти треки покупали. 
+Ни один трек не должен потеряться, даже если его не покупали вообще. Чтобы получить нужный результат, надо соединить три таблицы сразу, ведь таблица invoice, 
+которая хранит данные о дате заказа, не содержит информации о купленных треках.
+Сначала соедините таблицы track и invoice_line по ключу track_id, а затем присоедините таблицу invoice по ключу invoice_id. В итоговую таблицу поместите два поля: 
+name из таблицы track и invoice_date из таблицы invoice. Приведите дату в нужный формат.
+
+SELECT t.name, CAST(invoice_date as date)
+FROM track as t
+LEFT OUTER JOIN invoice_line as il ON t.track_id = il.track_id
+LEFT OUTER JOIN invoice as i ON i.invoice_id = il.invoice_id;
+
+Посчитайте для каждого года число уникальных названий купленных треков.
+
+SELECT EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) AS year_of_invoice,
+       COUNT(DISTINCT(t.name))
+FROM track AS t
+LEFT JOIN invoice_line AS il ON t.track_id = il.track_id
+LEFT JOIN invoice AS i ON il.invoice_id = i.invoice_id
+GROUP BY year_of_invoice;
+
+Выгрузите таблицу из двух полей: первое поле с фамилией сотрудника, второе — с количеством пользователей, чьи запросы этот сотрудник обработал. 
+Назовите поля employee_last_name и all_customers соответственно. Сгруппируйте записи по идентификатору сотрудника. Отсортируйте количество пользователей по убыванию
+
+SELECT s.last_name AS employee_last_name, COUNT(c.customer_id) AS all_customers
+FROM staff as s
+LEFT JOIN client AS c ON s.employee_id = c.support_rep_id
+GROUP BY s.employee_id
+ORDER BY all_customers DESC;
+
+У некоторых сотрудников есть менеджеры — их идентификаторы указаны в поле reports_to. 
+Посмотрите внимательно на схему базы: таблица staff отсылает сама к себе. Это нормально, можно не создавать новую таблицу с менеджерами.
+Теперь можно разобраться в иерархии команды. Отобразите таблицу с двумя полями: в первое поле войдут фамилии всех сотрудников, а во второе — фамилии их менеджеров. 
+Назовите поля employee_last_name и manager_last_name.
+
+SELECT s.last_name AS employee_last_name,
+    m.last_name AS manager_last_name
+FROM staff as s
+RIGHT JOIN staff as m ON m.reports_to = s.employee_id;
+
+Выведите идентификатор и фамилию актёра или актрисы, а также количество фильмов, 
+в которых он или она снимались. Если нет информации, кто снимался в фильме, такой фильм тоже должен войти в таблицу.
+
+SELECT a.actor_id, a.last_name, COUNT(m.film_id)
+FROM actor AS a
+JOIN film_actor AS fa ON a.actor_id = fa.actor_id
+RIGHT JOIN movie AS m ON fa.film_id = m.film_id
+GROUP BY a.actor_id, a.last_name;
+
+
+SELECT a.actor_id, a.last_name, COUNT(m.film_id)
+FROM movie AS m
+LEFT JOIN film_actor AS fa ON m.film_id = fa.film_id
+LEFT JOIN actor AS a ON fa.actor_id = a.actor_id
+GROUP BY a.actor_id, a.last_name;
+
+Отобразите на экране имена исполнителей, для которых в базе данных не нашлось ни одного музыкального альбома.
+
+SELECT a.name
+FROM artist as a
+LEFT JOIN album AS al ON a.artist_id = al.artist_id
+WHERE al.album_id IS NULL;
+
+SELECT a.name
+FROM artist as a
+LEFT JOIN album AS al ON a.artist_id = al.artist_id
+GROUP BY a.name 
+HAVING COUNT(al.album_id) = 0;
+
+Оператор FULL OUTER JOIN
+
+Каждого пользователя в день рождения поздравляют особенным письмом. А если пользователь является однофамильцем известного актёра или актрисы, 
+таким пользователям можно присылать дополнительную рассылку. Можно объединить таблицы, чтобы составить такую рассылку.
+Дело за малым — подготовить таблицу, в которой будут указаны пользователи вместе со своими известными однофамильцами. При этом в таблицу должны 
+войти даже те актёры и актрисы, у которых нет однофамильцев среди пользователей, — их даты рождения пригодятся для других тематических рассылок.
+Но есть проблема: между таблицами actor и client нет прямой связи. В обеих таблицах указаны фамилии, но они никак не связаны со структурой базы данных. Это нестрашно. 
+В PostgreSQL можно объединять таблицы не только по ключам: первичным и внешним. Если в таблицах можно найти поля с одинаковыми названиями и похожим содержанием, объединить 
+таблицы можно с помощью таких полей.
+Все имена и фамилии из обеих таблиц должны попасть в базу, поэтому для такой задачи подойдёт оператор FULL OUTER JOIN. Его используют, чтобы вывести все записи из левой и 
+правой таблиц.
+Таблица должна содержать поля actor_id, first_name, last_name для актёра или актрисы, а также first_name и last_name для пользователя.
+
+SELECT a.actor_id,
+       a.first_name,
+       a.last_name,
+       c.first_name,
+       c.last_name
+FROM actor AS a
+FULL OUTER JOIN client AS c ON a.last_name = c.last_name
+LIMIT 10; 
+
+Стоит обратить внимание на то, что FULL OUTER JOIN не самый популярный оператор. Старайтесь использовать его только на небольших таблицах. 
+Крупные таблицы при использовании FULL OUTER JOIN могут увеличиться ещё больше, а это усложнит работу с данными.
+
+Альтернативные варианты присоединения: UNION и UNION ALL
+
+В прошлых уроках вы учились соединять таблицы «по горизонтали»: объединяли поля из разных таблиц по ключам или общим полям. Это не единственный способ, 
+иногда требуется дополнить одну таблицу другой, то есть соединить их «по вертикали». Для такой задачи используют операторы UNION и UNION ALL.
+
+Оператор UNION используют, чтобы объединить выдачу SQL-запросов. Можно представить, что к одной таблице «приклеивается» другая.
+Два правила регламентируют использование операторов UNION и UNION ALL:
+Извлекать поля из одной таблицы нужно в том же порядке, что и из другой. Число извлекаемых полей тоже должно совпадать.
+Типы данных в полях должны соответствовать друг другу. Объединить поле типа integer с полем типа varchar не получится, а поля с типами integer и real — можно.
+
+Две выгруженных таблицы похожи: число полей одинаково и типы данных в полях соответствуют друг другу. Значит, такие таблицы можно объединить с помощью оператора UNION.
+После первого запроса указывают оператор UNION и добавляют второй запрос.
+
+SELECT i.billing_country,
+       COUNT(i.total) AS total_purchases
+FROM invoice AS i
+WHERE i.billing_country IN ('USA',
+                            'Germany',
+                            'Brazil')
+  AND EXTRACT(YEAR
+              FROM cast(invoice_date AS date)) = 2009
+GROUP BY i.billing_country
+UNION
+SELECT i.billing_country,
+       COUNT(i.total) AS total_purchases
+FROM invoice AS i
+WHERE i.billing_country IN ('USA',
+                            'Germany',
+                            'Brazil')
+  AND EXTRACT(YEAR
+              FROM cast(invoice_date AS date)) = 2013
+GROUP BY i.billing_country; 
+
+Обратите внимание, что в итоговую таблицу вошли две записи, в которых указаны страны Германия и США. 
+Но запись для Бразилии всего одна. Дело в том, что в 2009 и 2013 годах количество заказов в Бразилии совпадает — их 7. 
+Запись из первой таблицы полностью дублирует запись из второй. Оператор UNION устроен так, что абсолютные дубликаты в итоговую таблицу не входят: останется только одна запись.
+
+Оператор UNION ALL устроен по-другому.
+
+SELECT i.billing_country,
+       COUNT(i.total) AS total_purchases
+FROM invoice AS i
+WHERE i.billing_country IN ('USA',
+                            'Germany',
+                            'Brazil')
+  AND EXTRACT(YEAR
+              FROM cast(invoice_date AS date)) = 2009
+GROUP BY i.billing_country
+UNION ALL
+SELECT i.billing_country,
+       COUNT(i.total) AS total_purchases
+FROM invoice AS i
+WHERE i.billing_country IN ('USA',
+                            'Germany',
+                            'Brazil')
+  AND EXTRACT(YEAR
+              FROM cast(invoice_date AS date)) = 2013
+GROUP BY i.billing_country; 
+
+Все записи вошли в таблицу, даже полные дубликаты.
+С помощью UNION и UNION ALL тоже можно присоединить несколько таблиц. К запросу добавляют оператор UNION или UNION ALL и указывают новый запрос.
+
+ЗАПРОС_1
+UNION ALL
+ЗАПРОС_2
+UNION ALL
+ЗАПРОС_3
+UNION ALL
+.......; 
+
+Разница между первичным ключом и внешним ключом
+Определение
+В реляционной модели баз данных первичный ключ - это конкретный выбор минимального набора атрибутов или столбцов, которые однозначно определяют кортеж или строку в таблице. 
+Внешний ключ - это поле или набор полей в одной таблице, которые однозначно идентифицируют строку другой таблицы или той же таблицы. Следовательно, это составляет 
+основное различие между первичным ключом и внешним ключом.
+
+Количество связанных таблиц
+Первичный ключ связан с одной таблицей, а внешний ключ связан с двумя таблицами. Таким образом, вытекает из базовой концепции, это еще одно различие между первичным 
+ключом и внешним ключом.
+
+Нулевые значения
+Кроме того, значение первичного ключа не может быть нулевым, но значение внешнего ключа может быть нулевым.
+
+Повторяющиеся значения
+Кроме того, еще одно различие между первичным ключом и внешним ключом состоит в том, что значения первичного ключа не могут иметь повторяющиеся значения, тогда как значения 
+внешнего ключа могут иметь повторяющиеся значения.
+
+Количество ключей
+Кроме того, еще одно важное различие между первичным ключом и внешним ключом заключается в том, что в таблице может быть только один первичный ключ. Однако в таблице может 
+быть несколько внешних ключей.
+
+использование
+Первичный ключ используется для уникальной идентификации записей таблицы, в то время как внешний ключ используется для связи двух таблиц. Это основное различие между 
+первичным ключом и внешним ключом.
+
+Заключение
+Первичный ключ и внешний ключ - это два типа ключей, используемых в СУБД. Разница между первичным ключом и внешним ключом заключается в том, что первичный ключ используется 
+для уникальной идентификации записей в таблице, а внешний ключ используется для соединения двух таблиц вместе. 
+
+Чем отличаются первичный и внешний ключи?
+
+Внешний ключ отвечает за связи между таблицами и может повторяться. Первичный ключ тоже играет роль в связях, но ему важно быть уникальным.
+
+Важное свойство первичного ключа — уникальность, но для внешнего ключа это необязательно. Вспомните, как были связаны таблицы в уроках. 
+У каждого пользователя из таблицы client был уникальный идентификатор — это первичный ключ. 
+В таблице со счетами invoice тоже было такое поле — оно было внешним ключом, но значения в нём могли повторяться, если один покупатель делал несколько заказов.
+
+Может ли у одной таблицы быть несколько внешних ключей?
+Может, при этом поля с внешними ключами могут содержать любые значения.
+Внешних ключей может быть несколько: таким образом можно связать одну таблицу с двумя, тремя и более. 
+Пропуски или дубликаты в поле с внешним ключом — не проблема, они не помешают объединить таблицы в запросе.
+
+Одна запись одной таблицы соответствует нескольким записям другой таблицы и наоборот.
+
+С помощью псевдонимов меняют названия полей при выгрузке.
+Псевдонимы удобно использовать при объединении: с их помощью можно привязать поле к конкретной таблице.
+
+В чем отличие операторов LEFT OUTER JOIN и LEFT JOIN?
+
+Разницы между ними нет, LEFT OUTER JOIN — полная форма записи оператора, LEFT JOIN — короткая.
+
+Что выгрузит этот запрос?
+SELECT c.last_name,
+       COUNT(i.total)
+FROM client AS c LEFT JOIN invoice AS i ON c.customer_id = i.customer_id; 
+Запрос выдаст ошибку, не хватает группировки.
+Этот запрос должен выгрузить все фамилии из поля last_name и добавить к ним данные о количестве заказов из таблицы invoice. Но запрос COUNT(i.total) 
+без группировки должен вывести только одно значение — количество записей в поле total. В этом запросе данные двух таблиц не смогут объединиться, и произойдёт ошибка.
+
+Чаще всего RIGHT OUTER JOIN можно заменить на LEFT OUTER JOIN, просто поменяв таблицы местами.
+
+Напомним действие оператора FULL OUTER JOIN: его используют в том случае, если хотят сохранить данные из обеих таблиц. Если в полях, по которым объединяют таблицы, найдутся соответствия — 
+записи объединятся. Если совпадений не найдётся — на месте отсутствующих значений будет NULL.
+
+SELECT t.name,
+       a.title
+FROM album AS a RIGHT JOIN track AS t ON t.album_id = a.album_id; 
+
+Запрос выгрузит таблицу из двух полей: первое поле с названиями треков, второе — с названиями альбомов, 
+куда эти треки входят. Если треку не соответствует какой-либо альбом, на месте названия альбома будет стоять NULL.
+
+Можно ли объединять таблицы по полям, которые не являются внешними ключами?
+Вспомните урок про тип FULL OUTER JOIN. В этом уроке для объединения использовали поля с похожим названием и содержанием, которые не были внешним или первичным ключами.
+
+Что выгрузит этот запрос?
+SELECT e.instituition,
+       COUNT(DISTINCT c.name)
+FROM education AS e INNER JOIN people AS p ON e.person_id = p.id
+FULL JOIN company AS c ON c.id = p.company_id
+GROUP BY e.instituition
+HAVING COUNT(c.name) <> 0;
+
+Запрос выведет таблицу из двух полей: в первом поле будет название учебного заведения, а во втором — количество уникальных компаний, в которых работают выпускники 
+этого места. Если в компании нет выпускников какого-либо учебного заведения, запись об этом в таблицу не войдёт.
+
+В чем разница между UNION и UNION ALL
+UNION удаляет дубликаты из итоговой таблицы, а UNION ALL оставляет все значения.
+
+Подзапросы в FROM
+
+Представьте, что вам нужно решить такую задачу: отобрать возрастные рейтинги фильмов с самым большим средним значением цены аренды, 
+а затем посчитать среднее от пяти отобранных значений. Как в одном запросе найти среднее значение от средних значений?
+
+SELECT m.rating,
+       AVG(m.rental_rate) AS average_rental
+FROM movie AS m
+GROUP BY m.rating
+ORDER BY average_rental DESC
+LIMIT 5; 
+
+Первая часть запроса выполнена. Было бы удобно, если такая таблица уже была бы в базе данных. Если собрать нужные данные в таблицу best_rating, можно 
+написать такой запрос, который выведет среднее значение поля average_rental.
+
+SELECT AVG(average_rental)
+FROM (.......) AS best_rating 
+
+Сначала можно проверить, какую таблицу вернёт запрос с подзапросом. После SELECT стоит указать *, чтобы убедиться, что запрос с подзапросом вернёт всю таблицу без ошибок.
+
+SELECT *
+FROM
+  (SELECT m.rating,
+          AVG(m.rental_rate) AS average_rental
+   FROM movie AS m
+   GROUP BY m.rating
+   ORDER BY average_rental DESC
+   LIMIT 5) AS best_rating; 
+
+Результат остался прежним, и теперь можно добавить вычисление среднего значения.
+
+SELECT AVG(best_rating.average_rental)
+FROM
+  (SELECT m.rating,
+          AVG(m.rental_rate) AS average_rental
+   FROM movie AS m
+   GROUP BY m.rating
+   ORDER BY average_rental DESC
+   LIMIT 5) AS best_rating; 
+
+Задача выполнена. Обратите внимание, что подзапрос возвращает таблицу. 
+Ей лучше назначить псевдоним best_rating, так будет проще к ней обращаться. В некоторых случаях таблица в подзапросе без псевдонима может привести к ошибке.
+
+
+Найдите топ-40 самых длинных фильмов, аренда которых составляет больше 2 долларов. Выведите на экран название фильма (поле title), 
+цену аренды (поле rental_rate), длительность фильма (поле length) и возрастной рейтинг (поле rating).
+
+SELECT m.title, m.rental_rate, m.length, m.rating
+FROM movie as m
+WHERE m.rental_rate > 2
+ORDER BY m.length DESC
+LIMIT 40;
+
+Проанализируйте данные о возрастных рейтингах отобранных фильмов. Выгрузите в итоговую таблицу следующие поля:
+возрастной рейтинг (поле rating);
+минимальное и максимальное значения длительности (поле length); назовите поля min_length и max_length соответственно;
+среднее значение длительности (поле length); назовите поле avg_length;
+минимум, максимум и среднее для цены просмотра (поле rental_rate); назовите поля min_rental_rate, max_rental_rate, avg_rental_rate соответственно.
+Отсортируйте среднюю длительность фильма по возрастанию.
+
+SELECT film.rating, 
+    MIN(film.length) as min_length,
+    MAX(film.length) as max_length,
+    AVG(film.length) as avg_length,
+    MIN(film.rental_rate) as min_rental_rate,
+    MAX(film.rental_rate) as max_rental_rate,
+    AVG(film.rental_rate) as avg_rental_rate
+FROM
+(SELECT title,
+       rental_rate,
+	   length,
+	   rating
+FROM movie
+WHERE rental_rate > 2
+ORDER BY length DESC
+LIMIT 40) as film
+GROUP BY film.rating
+ORDER BY avg_length;
+
+Найдите средние значения полей, в которых указаны минимальная и максимальная длительность отобранных фильмов. 
+Отобразите только два этих поля. Назовите их avg_min_length и avg_max_length соответственно.
+
+SELECT AVG(mean.min_length) as avg_min_length, AVG(mean.max_length) as avg_max_length
+FROM 
+    (SELECT top.rating,
+       MIN(top.length) AS min_length,
+       MAX(top.length) AS max_length,
+       AVG(top.length) AS avg_length,
+       MIN(top.rental_rate) AS min_rental_rate,
+       MAX(top.rental_rate) AS max_rental_rate,
+       AVG(top.rental_rate) AS avg_rental_rate
+FROM
+  (SELECT title,
+          rental_rate,
+          length,
+          rating
+   FROM movie
+   WHERE rental_rate > 2
+   ORDER BY length DESC
+   LIMIT 40) AS top
+GROUP BY top.rating
+ORDER BY avg_length) as mean;
+
+
+Выведите на экран одно число — среднее количество композиций в альбомах, названия которых содержат слово 'Rock'. 
+В отобранных альбомах должно быть восемь треков или более.
+
+SELECT AVG(ta.avg_t)
+FROM
+(SELECT a.title, COUNT(t.track_id) as avg_t
+FROM album as a
+INNER JOIN track as t ON t.album_id = a.album_id
+WHERE a.title LIKE '%Rock%'
+GROUP BY a.title
+HAVING COUNT(t.track_id) >= 8) as ta;
+
+Для каждой страны посчитайте среднюю стоимость заказов в 2009 году. Отберите данные за 2, 5, 7 и 10 месяцы и 
+сложите средние значения стоимости заказов. Выведите названия стран, у которых это число превышает 10 долларов.
+
+SELECT mean_tot.billing_country
+FROM
+    (SELECT billing_country, AVG(total) as mean, EXTRACT(MONTH FROM CAST(invoice_date as timestamp)) 
+    FROM invoice
+    WHERE EXTRACT(MONTH FROM CAST(invoice_date as timestamp)) IN (2, 5, 7, 10) and EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) = 2009
+    GROUP BY billing_country, EXTRACT(MONTH FROM CAST(invoice_date as timestamp))) as mean_tot
+GROUP BY mean_tot.billing_country
+HAVING SUM(mean_tot.mean) > 10;
+
+Подзапросы в WHERE
+
+Подзапросы пишут не только после оператора FROM. С их помощью можно даже объединять данные разных таблиц.
+Например, можно собрать всю информацию о пользователях, которые оформили самые крупные заказы. Сначала нужно найти таких пользователей — этот запрос 
+выведет десять идентификаторов пользователей с самыми крупными заказами.
+
+SELECT customer_id
+FROM invoice
+GROUP BY customer_id
+ORDER BY SUM(total) DESC
+LIMIT 10; 
+
+Теперь эти данные можно использовать вместе с оператором WHERE. Такой подзапрос устроен точно так же, как и подзапрос с FROM. 
+Нужно использовать полученные данные в качестве условия.
+
+SELECT *
+FROM client
+WHERE customer_id IN (......); 
+
+Можно формировать окончательный запрос:
+SELECT *
+FROM client
+WHERE customer_id IN (SELECT customer_id
+                      FROM invoice
+                      GROUP BY customer_id
+                      ORDER BY SUM(total) DESC
+                      LIMIT 10);
+					  
+Казалось бы, в уроках про объединение таблиц вы получали похожую выгрузку запросами с JOIN. Но у способа с подзапросами есть преимущество: данные сначала отбирают, 
+а потом объединяют в итоговую таблицу. Если отбор данных следует за объединением, как в запросах с JOIN, выгрузка занимает больше времени.
+
+
+Вы уже сравнивали выручку в разных странах, но теперь можно усовершенствовать запросы.
+Таблица invoice_line хранит информацию о купленных треках. Выгрузите из неё только те заказы (поле invoice_id), которые включают больше пяти треков.
+
+SELECT invoice_id
+FROM invoice_line
+GROUP BY invoice_id
+HAVING COUNT(track_id) >5;
+
+С помощью той же таблицы найдите среднее значение цены одного трека (поле unit_price).
+
+SELECT SUM(unit_price)/COUNT(track_id)
+FROM invoice_line;
+
+Для каждой страны (поле billing_country) посчитайте минимальное, максимальное и среднее значение выручки из поля total. 
+Назовите поля так: min_total, max_total и avg_total. Нужные поля для выгрузки хранит таблица invoice.
+При подсчёте учитывайте только те заказы, которые включают более пяти треков. Стоимость заказа должна превышать среднюю цену одного трека.
+Отсортируйте итоговую таблицу по значению в поле avg_total от большего к меньшему.
+
+SELECT billing_country,
+    MIN(total) AS min_total,
+    MAX(total) AS max_total,
+    AVG(total) AS avg_total
+FROM invoice
+WHERE invoice_id IN 
+    (SELECT invoice_id
+    FROM invoice_line
+    GROUP BY invoice_id
+    HAVING COUNT(track_id) >5) and total > 
+    (SELECT SUM(unit_price)/COUNT(track_id)
+    FROM invoice_line)
+GROUP BY billing_country
+ORDER BY avg_total DESC;
+
+Отберите десять самых коротких по продолжительности треков и выгрузите названия их жанров.
+
+SELECT name
+FROM genre
+WHERE genre_id IN
+(SELECT genre_id
+FROM track
+ORDER BY milliseconds 
+LIMIT 10);
+
+Выгрузите уникальные названия городов, в которых стоимость заказов превышает среднее значение за 2009 год.
+
+SELECT DISTINCT(billing_city)
+FROM invoice
+WHERE total > 
+    (SELECT AVG(total)
+    FROM invoice
+    WHERE EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) = 2009);
+	
+Найдите возрастной рейтинг с самыми дорогими для аренды фильмами. Для этого посчитайте среднюю стоимость аренды фильма каждого рейтинга. 
+Выведите на экран названия категорий фильмов с этим рейтингом. Добавьте второе поле со средним значением продолжительности фильмов.
+
+SELECT category.name, AVG(movie.length)
+FROM category
+INNER JOIN film_category ON film_category.category_id = category.category_id
+INNER JOIN movie ON movie.film_id = film_category.film_id
+WHERE rating = 
+(SELECT rating
+FROM movie
+GROUP BY rating
+ORDER BY AVG(rental_rate) DESC
+LIMIT 1)
+GROUP BY category.name;
+
+Составьте сводную таблицу. Посчитайте заказы, оформленные за каждый месяц в течение нескольких лет: с 2011 по 2013 год. 
+Итоговая таблица должна включать четыре поля: invoice_month, year_2011, year_2012, year_2013. Поле month должно хранить месяц в виде числа от 1 до 12.
+Если в какой-либо месяц заказы не оформляли, номер такого месяца всё равно должен попасть в таблицу.
+В этом задании не будет подсказок. Используйте любые методы, которые посчитаете нужными.
+
+SELECT a.month as invoice_month,
+    a.year_2011,
+    b.year_2012,
+    c.year_2013
+FROM 
+    (SELECT EXTRACT(MONTH FROM CAST(invoice_date as timestamp)) as month, 
+    COUNT(invoice_id) as year_2011
+    FROM invoice
+    WHERE EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) = 2011
+    GROUP BY EXTRACT(MONTH FROM CAST(invoice_date as timestamp))) as a
+INNER JOIN
+    (SELECT EXTRACT(MONTH FROM CAST(invoice_date as timestamp)) as month, 
+    COUNT(invoice_id) as year_2012
+    FROM invoice
+    WHERE EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) = 2012
+    GROUP BY EXTRACT(MONTH FROM CAST(invoice_date as timestamp))) as b ON a.month = b.month
+INNER JOIN
+    (SELECT EXTRACT(MONTH FROM CAST(invoice_date as timestamp)) as month, 
+    COUNT(invoice_id) as year_2013
+    FROM invoice
+    WHERE EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) = 2013
+    GROUP BY EXTRACT(MONTH FROM CAST(invoice_date as timestamp))) as c ON a.month = c.month
+
+Отберите фамилии пользователей, которые:
+оформили хотя бы один заказ в январе 2013 года,
+а также сделали хотя бы один заказ в остальные месяцы того же года.
+Пользователей, которые оформили заказы только в январе, а в остальное время ничего не заказывали, в таблицу включать не нужно.
+
+SELECT a.last_name
+FROM
+(SELECT last_name 
+FROM client
+INNER JOIN invoice as i ON i.customer_id = client.customer_id
+WHERE EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) = 2013 and EXTRACT(MONTH FROM CAST(invoice_date as timestamp)) = 1
+GROUP BY last_name 
+HAVING COUNT(i.invoice_id) >= 1) as a
+INNER JOIN
+(SELECT last_name 
+FROM client
+INNER JOIN invoice as i ON i.customer_id = client.customer_id
+WHERE EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) = 2013 and EXTRACT(MONTH FROM CAST(invoice_date as timestamp)) <> 1
+GROUP BY last_name 
+HAVING COUNT(i.invoice_id) >= 1) as b ON a.last_name = b.last_name;
+
+Сформируйте статистику по категориям фильмов. Отобразите в итоговой таблице два поля:
+название категории;
+число фильмов из этой категории.
+Фильмы для второго поля нужно отобрать по условию. Посчитайте фильмы только с теми актёрами и актрисами, которые больше семи раз снимались в фильмах, вышедших после 2013 года.
+Назовите поля name_category и total_films соответственно. Отсортируйте таблицу по количеству фильмов от большего к меньшему, а затем по полю с названием категории 
+в лексикографическом порядке.
+
+SELECT c.name as name_category, COUNT(DISTINCT fa.film_id) as total_films
+FROM category as c
+INNER JOIN film_category as fc ON c.category_id = fc.category_id
+INNER JOIN film_actor as fa ON fc.film_id = fa.film_id
+WHERE fa.actor_id IN 
+(SELECT fa.actor_id
+FROM movie as m
+INNER JOIN film_actor as fa ON m.film_id = fa.film_id
+INNER JOIN actor as a ON a.actor_id = fa.actor_id
+WHERE release_year > 2013
+GROUP BY fa.actor_id
+HAVING COUNT(a.actor_id) > 7)
+GROUP BY name_category
+ORDER BY total_films DESC, name_category;
+
+
+Определите, летом какого года общая выручка была максимальной. Выгрузите таблицу, в которую войдут поля:
+country — название страны;
+total_invoice — число заказов, оформленных в этой стране в тот год, когда выручка за лето была максимальной;
+total_customer — число клиентов, зарегистрированных в этой стране.
+Отсортируйте таблицу по убыванию значений в поле total_invoice, а затем добавьте сортировку по названию страны в лексикографическом порядке.
+
+SELECT a.country,
+    total_invoice,
+    total_customer
+FROM
+(SELECT billing_country as country,
+    COUNT(invoice_id) as total_invoice
+FROM invoice
+WHERE EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) =
+(SELECT EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) AS year
+FROM invoice
+WHERE EXTRACT(MONTH FROM CAST(invoice_date as timestamp)) BETWEEN 6 and 8
+GROUP BY year
+ORDER BY SUM(total) DESC
+LIMIT 1)
+GROUP BY country) as a
+INNER JOIN 
+(SELECT country as country,
+    COUNT(customer_id) as total_customer
+FROM client
+GROUP BY country) as b ON b.country = a.country
+ORDER BY total_invoice DESC, a.country;
+
+
+Перепишите один из своих прошлых запросов с использованием оператора WITH.
+Выведите топ-40 самых длинных фильмов, аренда которых составляет больше 2 долларов. Проанализируйте данные о возрастных рейтингах отобранных фильмов. 
+Выгрузите в итоговую таблицу следующие поля:
+возрастной рейтинг (поле rating);
+минимальное и максимальное значения длительности (поле length), назовите поля min_length и max_length соответственно;
+среднее значение длительности (поле length), назовите поле avg_length;
+максимум, минимум и среднее для цены просмотра (поле rental_rate), назовите поля min_rental_rate, max_rental_rate, avg_rental_rate соответственно.
+Отсортируйте среднюю длительность фильма по возрастанию.
+
+WITH 
+
+top AS (SELECT title,
+          rental_rate,
+          length,
+          rating
+   FROM movie
+   WHERE rental_rate > 2
+   ORDER BY length DESC
+   LIMIT 40)
+
+SELECT top.rating,
+       MIN(top.length) AS min_length,
+       MAX(top.length) AS max_length,
+       AVG(top.length) AS avg_length,
+       MIN(top.rental_rate) AS min_rental_rate,
+       MAX(top.rental_rate) AS max_rental_rate,
+       AVG(top.rental_rate) AS avg_rental_rate
+FROM top
+GROUP BY top.rating
+ORDER BY avg_length;
+
+
+Перепишите один из своих прошлых запросов, используя оператор WITH.
+Составьте сводную таблицу. Посчитайте заказы, оформленные за каждый месяц в течение нескольких лет: с 2011 по 2013 год. 
+Итоговая таблица должна включать четыре поля: invoice_month, year_2011, year_2012, year_2013. Поле month должно хранить месяц в виде числа от 1 до 12.
+
+
+Если в какой-либо месяц заказы не оформляли, номер такого месяца всё равно должен попасть в таблицу.
+
+WITH
+
+a AS (SELECT EXTRACT(MONTH FROM CAST(invoice_date as timestamp)) as month, 
+    COUNT(invoice_id) as year_2011
+    FROM invoice
+    WHERE EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) = 2011
+    GROUP BY EXTRACT(MONTH FROM CAST(invoice_date as timestamp))),
+    
+b AS (SELECT EXTRACT(MONTH FROM CAST(invoice_date as timestamp)) as month, 
+    COUNT(invoice_id) as year_2012
+    FROM invoice
+    WHERE EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) = 2012
+    GROUP BY EXTRACT(MONTH FROM CAST(invoice_date as timestamp))),
+    
+c AS (SELECT EXTRACT(MONTH FROM CAST(invoice_date as timestamp)) as month, 
+    COUNT(invoice_id) as year_2013
+    FROM invoice
+    WHERE EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) = 2013
+    GROUP BY EXTRACT(MONTH FROM CAST(invoice_date as timestamp)))
+
+SELECT a.month as invoice_month,
+    a.year_2011,
+    b.year_2012,
+    c.year_2013
+FROM a
+INNER JOIN b ON a.month = b.month
+INNER JOIN c ON a.month = c.month;
+
+Проанализируйте данные из таблицы invoice за 2012 и 2013 годы. В итоговую таблицу должны войти поля:
+month — номер месяца;
+sum_total_2012 — выручка за этот месяц в 2012 году;
+sum_total_2013 — выручка за этот месяц в 2013 году;
+perc — процент, который отображает, насколько изменилась месячная выручка в 2013 году по сравнению с 2012 годом.
+Округлите значение в поле perc до ближайшего целого числа. Отсортируйте таблицу по значению в поле month от меньшего к большему.
+
+WITH
+
+a AS (SELECT EXTRACT(MONTH FROM CAST(invoice_date as timestamp)) as month, 
+    SUM(total) as sum_total_2012
+    FROM invoice
+    WHERE EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) = 2012
+    GROUP BY EXTRACT(MONTH FROM CAST(invoice_date as timestamp))),
+    
+b AS (SELECT EXTRACT(MONTH FROM CAST(invoice_date as timestamp)) as month, 
+    SUM(total) as sum_total_2013
+    FROM invoice
+    WHERE EXTRACT(YEAR FROM CAST(invoice_date as timestamp)) = 2013
+    GROUP BY EXTRACT(MONTH FROM CAST(invoice_date as timestamp)))
+    
+SELECT a.month,
+    sum_total_2012,
+    sum_total_2013,
+    ROUND((sum_total_2013-sum_total_2012)*100/sum_total_2012) as perc
+FROM a
+INNER JOIN b ON a.month = b.month
+ORDER BY month;
+
+
+Венчурные фонды — это финансовые организации, которые могут позволить себе высокий риск и инвестировать в компании с инновационной бизнес-идеей или разработанной новой технологией, 
+то есть в стартапы. Цель венчурных фондов — в будущем получить значительную прибыль, которая в разы превысит размер их трат на инвестиции в компанию. Если стартап подорожает, 
+венчурный фонд может получить долю в компании или фиксированный процент от её выручки.
+Чтобы процесс финансирования стал менее рискованным, его делят на стадии — раунды. Тот или иной раунд зависит от того, какого уровня развития достигла компания.
+Первые этапы — предпосевной и посевной раунды. Предпосевной раунд предполагает, что компания как таковая ещё не создана и находится в стадии замысла. Следующий — посевной — раунд 
+знаменует рост проекта: создатели компании разрабатывают бизнес-модель и привлекают инвесторов.
+Если компании требуется ментор или наставник — она привлекает бизнес-ангела. Бизнес-ангелы — инвесторы, которые помимо финансовой поддержки предлагают экспертную помощь. Такой раунд 
+называют ангельским.
+Когда стартап становится компанией с проверенной бизнес-моделью и начинает зарабатывать самостоятельно, предложений инвесторов становится больше. Это раунд A, а за ним следуют и 
+другие: B, C, D — на этих этапах компания активно развивается и готовится к IPO.
+Иногда выделяют венчурный раунд — финансирование, которое могло поступить от венчурного фонда на любом этапе: начальном или более позднем.
+В данных об инвестициях вам встретятся упоминания раундов, но самостоятельный проект не предполагает, что вы должны разбираться в их специфике лучше любого инвестора. Главное — 
+понимать, как устроены данные.
+
+
+Теперь можно познакомиться с данными, которые хранят таблицы.
+
+acquisition
+Содержит информацию о покупках одних компаний другими.
+Таблица включает такие поля:
+первичный ключ id — идентификатор или уникальный номер покупки;
+внешний ключ acquiring_company_id — ссылается на таблицу company — идентификатор компании-покупателя, то есть той, что покупает другую компанию;
+внешний ключ acquired_company_id — ссылается на таблицу company — идентификатор компании, которую покупают;
+term_code — способ оплаты сделки:
+cash — наличными;
+stock — акциями компании;
+cash_and_stock — смешанный тип оплаты: наличные и акции.
+price_amount — сумма покупки в долларах;
+acquired_at — дата совершения сделки;
+created_at — дата и время создания записи в таблице;
+updated_at — дата и время обновления записи в таблице.
+
+company
+Содержит информацию о компаниях-стартапах.
+первичный ключ id — идентификатор, или уникальный номер компании;
+name — название компании;
+category_code — категория деятельности компании, например:
+news — специализируется на работе с новостями;
+social — специализируется на социальной работе.
+status — статус компании:
+acquired — приобретена;
+operating — действует;
+ipo — вышла на IPO;
+closed — перестала существовать.
+founded_at — дата основания компании;
+closed_at — дата закрытия компании, которую указывают в том случае, если компании больше не существует;
+domain — домен сайта компании;
+twitter_username — название профиля компании в твиттере;
+country_code — код страны, например, USA для США, GBR для Великобритании;
+investment_rounds — число раундов, в которых компания участвовала как инвестор;
+funding_rounds — число раундов, в которых компания привлекала инвестиции;
+funding_total — сумма привлечённых инвестиций в долларах;
+milestones — количество важных этапов в истории компании;
+created_at — дата и время создания записи в таблице;
+updated_at — дата и время обновления записи в таблице.
+
+education
+Хранит информацию об уровне образования сотрудников компаний.
+первичный ключ id — уникальный номер записи с информацией об образовании;
+внешний ключ person_id — ссылается на таблицу people — идентификатор человека, информация о котором представлена в записи;
+degree_type — учебная степень, например:
+BA — Bachelor of Arts — бакалавр гуманитарных наук;
+MS — Master of Science — магистр естественных наук.
+instituition — учебное заведение, название университета;
+graduated_at — дата завершения обучения, выпуска;
+created_at — дата и время создания записи в таблице;
+updated_at — дата и время обновления записи в таблице.
+
+fund
+Хранит информацию о венчурных фондах.
+первичный ключ id — уникальный номер венчурного фонда;
+name — название венчурного фонда;
+founded_at — дата основания фонда;
+domain — домен сайта фонда;
+twitter_username — профиль фонда в твиттере;
+country_code — код страны фонда;
+investment_rounds — число инвестиционных раундов, в которых фонд принимал участие;
+invested_companies — число компаний, в которые инвестировал фонд;
+milestones — количество важных этапов в истории фонда;
+created_at — дата и время создания записи в таблице;
+updated_at — дата и время обновления записи в таблице.
+
+funding_round
+Содержит информацию о раундах инвестиций.
+первичный ключ id — уникальный номер инвестиционного раунда;
+внешний ключ company_id — ссылается на таблицу company — уникальный номер компании, участвовавшей в инвестиционном раунде;
+funded_at — дата проведения раунда;
+funding_round_type — тип инвестиционного раунда, например:
+venture — венчурный раунд;
+angel — ангельский раунд;
+series_a — раунд А.
+raised_amount — сумма инвестиций, которую привлекла компания в этом раунде в долларах;
+pre_money_valuation — предварительная, проведённая до инвестиций оценка стоимости компании в долларах;
+participants — количество участников инвестиционного раунда;
+is_first_round — является ли этот раунд первым для компании;
+is_last_round — является ли этот раунд последним для компании;
+created_at — дата и время создания записи в таблице;
+updated_at — дата и время обновления записи в таблице.
+
+investment
+Содержит информацию об инвестициях венчурных фондов в компании-стартапы.
+первичный ключ id — уникальный номер инвестиции;
+внешний ключ funding_round_id — ссылается на таблицу funding_round — уникальный номер раунда инвестиции;
+внешний ключ company_id — ссылается на таблицу company — уникальный номер компании-стартапа, в которую инвестируют;
+внешний ключ fund_id — ссылается на таблицу fund — уникальный номер фонда, инвестирующего в компанию-стартап;
+created_at — дата и время создания записи в таблице;
+updated_at — дата и время обновления записи в таблице.
+
+people
+Содержит информацию о сотрудниках компаний-стартапов.
+первичный ключ id — уникальный номер сотрудника;
+first_name — имя сотрудника;
+last_name — фамилия сотрудника;
+внешний ключ company_id — ссылается на таблицу company — уникальный номер компании-стартапа;
+twitter_username — профиль сотрудника в твиттере;
+created_at — дата и время создания записи в таблице;
+updated_at — дата и время обновления записи в таблице.
+
+Посчитайте, сколько компаний закрылось.
+
+SELECT COUNT(id)
+FROM company
+WHERE status = 'closed';
+
+Отобразите количество привлечённых средств для новостных компаний США. Используйте данные из таблицы company. Отсортируйте таблицу по убыванию значений в поле funding_total .
+
+SELECT SUM(funding_total)
+FROM company
+WHERE country_code = 'USA' and category_code = 'news'
+GROUP BY name
+ORDER BY SUM(funding_total) DESC;
+
+Найдите общую сумму сделок по покупке одних компаний другими в долларах. Отберите сделки, которые осуществлялись только за наличные с 2011 по 2013 год включительно.
+
+SELECT SUM(price_amount)
+FROM acquisition
+WHERE term_code = 'cash' and EXTRACT(YEAR FROM CAST(acquired_at as timestamp)) BETWEEN 2011 and 2013;
+
+
+Отобразите имя, фамилию и названия аккаунтов людей в твиттере, у которых названия аккаунтов начинаются на 'Silver'
+
+SELECT first_name, last_name, twitter_username
+FROM people
+WHERE twitter_username LIKE 'Silver%';
+
+
+Выведите на экран всю информацию о людях, у которых названия аккаунтов в твиттере содержат подстроку 'money', а фамилия начинается на 'K'.
+
+SELECT *
+FROM people
+WHERE twitter_username LIKE '%money%' and last_name LIKE 'K%';
+
+Для каждой страны отобразите общую сумму привлечённых инвестиций, которые получили компании, зарегистрированные в этой стране. 
+Страну, в которой зарегистрирована компания, можно определить по коду страны. Отсортируйте данные по убыванию суммы.
+
+SELECT country_code, SUM(funding_total)
+FROM company
+GROUP BY country_code
+ORDER BY SUM(funding_total) DESC;
+
+Составьте таблицу, в которую войдёт дата проведения раунда, а также минимальное и максимальное значения суммы инвестиций, привлечённых в эту дату.
+Оставьте в итоговой таблице только те записи, в которых минимальное значение суммы инвестиций не равно нулю и не равно максимальному значению.
+
+SELECT CAST(funded_at as date) date_f, MIN(raised_amount), MAX(raised_amount)
+FROM funding_round
+GROUP BY date_f
+HAVING MIN(raised_amount) <> 0 and MIN(raised_amount) <> MAX(raised_amount);
+
+
+Создайте поле с категориями:
+Для фондов, которые инвестируют в 100 и более компаний, назначьте категорию high_activity.
+Для фондов, которые инвестируют в 20 и более компаний до 100, назначьте категорию middle_activity.
+Если количество инвестируемых компаний фонда не достигает 20, назначьте категорию low_activity.
+Отобразите все поля таблицы fund и новое поле с категориями.
+
+SELECT *,
+    CASE
+        WHEN invested_companies >= 100 THEN 'high_activity'
+        WHEN invested_companies BETWEEN 20 and 99 THEN 'middle_activity'
+        WHEN invested_companies < 20 THEN 'low_activity'
+    END
+FROM fund;
+
+Для каждой из категорий, назначенных в предыдущем задании, посчитайте округлённое до ближайшего целого числа среднее количество инвестиционных раундов, в которых фонд принимал 
+участие. 
+Выведите на экран категории и среднее число инвестиционных раундов. Отсортируйте таблицу по возрастанию среднего.
+
+SELECT CASE
+           WHEN invested_companies>=100 THEN 'high_activity'
+           WHEN invested_companies>=20 THEN 'middle_activity'
+           ELSE 'low_activity'
+       END AS activity,
+       ROUND(AVG(investment_rounds))  
+FROM fund
+GROUP BY activity
+ORDER BY ROUND(AVG(investment_rounds));
+
+Выгрузите таблицу с десятью самыми активными инвестирующими странами. Активность страны определите по среднему количеству компаний, в которые инвестируют фонды этой страны.
+Для каждой страны посчитайте минимальное, максимальное и среднее число компаний, в которые инвестировали фонды, основанные с 2010 по 2012 год включительно.
+Исключите из таблицы страны с фондами, у которых минимальное число компаний, получивших инвестиции, равно нулю. Отсортируйте таблицу по среднему количеству компаний от большего 
+к меньшему.
+Для фильтрации диапазона по годам используйте оператор BETWEEN.
+
+SELECT country_code, MIN(invested_companies), MAX(invested_companies), AVG(invested_companies)
+FROM fund
+WHERE EXTRACT(YEAR FROM CAST(founded_at as timestamp)) BETWEEN 2010 and 2012
+GROUP BY country_code
+HAVING MIN(invested_companies) <> 0
+ORDER BY AVG(invested_companies) DESC
+LIMIT 10;
+
+Отобразите имя и фамилию всех сотрудников стартапов. Добавьте поле с названием учебного заведения, которое окончил сотрудник, если эта информация известна.
+
+SELECT p.first_name, p.last_name, e.instituition
+FROM education as e
+RIGHT OUTER JOIN people as p ON e.person_id = p.id;
+
+Для каждой компании найдите количество учебных заведений, которые окончили её сотрудники. Выведите название компании и число уникальных названий учебных заведений. 
+Составьте топ-5 компаний по количеству университетов.
+
+SELECT c.name, COUNT(DISTINCT (e.instituition))
+FROM education as e
+RIGHT OUTER JOIN people as p ON e.person_id = p.id
+INNER JOIN company as c ON p.company_id = c.id
+GROUP BY c.name
+ORDER BY COUNT(DISTINCT (e.instituition)) DESC
+LIMIT 5;
+
+Составьте список с уникальными названиями закрытых компаний, для которых первый раунд финансирования оказался последним.
+
+SELECT DISTINCT(c.name)
+FROM company as c
+INNER JOIN funding_round as fr ON fr.company_id = c.id
+WHERE c.status = 'closed' and fr.is_first_round =  fr.is_last_round
+
+SELECT DISTINCT(c.name)
+FROM company as c
+INNER JOIN funding_round as fr ON fr.company_id = c.id
+WHERE c.status = 'closed' and fr.is_first_round = 1 and fr.is_last_round = 1;
+
+Составьте список уникальных номеров сотрудников, которые работают в компаниях, отобранных в предыдущем задании.
+
+SELECT id
+FROM people
+WHERE company_id in 
+(SELECT company_id
+FROM company as c
+INNER JOIN funding_round as fr ON fr.company_id = c.id
+WHERE c.status = 'closed' and fr.is_first_round = 1 and fr.is_last_round = 1);
+
+Составьте таблицу, куда войдут уникальные пары с номерами сотрудников из предыдущей задачи и учебным заведением, которое окончил сотрудник.
+
+SELECT DISTINCT(p.id), e.instituition
+FROM education as e
+RIGHT OUTER JOIN people as p ON e.person_id = p.id
+WHERE p.id IN
+(SELECT id
+FROM people
+WHERE company_id in 
+(SELECT company_id
+FROM company as c
+INNER JOIN funding_round as fr ON fr.company_id = c.id
+WHERE c.status = 'closed' and fr.is_first_round = 1 and fr.is_last_round = 1)) and e.instituition IS NOT NULL;
+
+Посчитайте количество учебных заведений для каждого сотрудника из предыдущего задания.
+
+SELECT p.id, COUNT(e.instituition)
+FROM education as e
+RIGHT OUTER JOIN people as p ON e.person_id = p.id
+WHERE p.id IN
+(SELECT id
+FROM people
+WHERE company_id in 
+(SELECT company_id
+FROM company as c
+INNER JOIN funding_round as fr ON fr.company_id = c.id
+WHERE c.status = 'closed' and fr.is_first_round = 1 and fr.is_last_round = 1)) and e.instituition IS NOT NULL
+GROUP BY p.id
+
+Дополните предыдущий запрос и выведите среднее число учебных заведений, которые окончили сотрудники разных компаний. 
+Нужно вывести только одну запись, группировка здесь не понадобится.
+
+SELECT AVG(i.amount)
+FROM
+(SELECT p.id, COUNT(e.instituition) as amount
+FROM education as e
+RIGHT OUTER JOIN people as p ON e.person_id = p.id
+WHERE p.id IN
+(SELECT id
+FROM people
+WHERE company_id in 
+(SELECT company_id
+FROM company as c
+INNER JOIN funding_round as fr ON fr.company_id = c.id
+WHERE c.status = 'closed' and fr.is_first_round = 1 and fr.is_last_round = 1)) and e.instituition IS NOT NULL
+GROUP BY p.id) as i;
+
+Напишите похожий запрос: выведите среднее число учебных заведений, которые окончили сотрудники компании Facebook.
+
+SELECT AVG(i.amount)
+FROM
+(SELECT p.id, COUNT(e.instituition) as amount
+FROM education as e
+RIGHT OUTER JOIN people as p ON e.person_id = p.id
+WHERE p.id IN
+(SELECT id
+FROM people
+WHERE company_id = 
+(SELECT DISTINCT(company_id)
+FROM company as c
+INNER JOIN funding_round as fr ON fr.company_id = c.id
+WHERE c.name = 'Facebook')) and e.instituition IS NOT NULL
+GROUP BY p.id) as i;
+
+Составьте таблицу из полей:
+name_of_fund — название фонда;
+name_of_company — название компании;
+amount — сумма инвестиций, которую привлекла компания в раунде.
+В таблицу войдут данные о компаниях, в истории которых было больше шести важных этапов, а раунды финансирования проходили с 2012 по 2013 год включительно.
+
+SELECT f.name as name_of_fund, c.name as name_of_company, fr.raised_amount as amount
+FROM fund as f
+INNER JOIN investment as i ON f.id = i.fund_id
+INNER JOIN funding_round as fr ON i.funding_round_id = fr.id
+INNER JOIN company as c ON fr.company_id = c.id
+WHERE c.milestones > 6 and EXTRACT(YEAR FROM CAST(fr.funded_at as timestamp)) BETWEEN 2012 and 2013;
+
+Выгрузите таблицу, в которой будут такие поля:
+название компании-покупателя;
+сумма сделки;
+название компании, которую купили;
+сумма инвестиций, вложенных в купленную компанию;
+доля, которая отображает, во сколько раз сумма покупки превысила сумму вложенных в компанию инвестиций, округлённая до ближайшего целого числа.
+Не учитывайте те сделки, в которых сумма покупки равна нулю. Если сумма инвестиций в компанию равна нулю, исключите такую компанию из таблицы.
+Отсортируйте таблицу по сумме сделки от большей к меньшей, а затем по названию купленной компании в алфавитном порядке. Ограничьте таблицу первыми десятью записями.
+
+SELECT  c.name AS acquiring_company, 
+        a.price_amount, 
+        c2.name AS acquired_company, 
+        c2.funding_total,
+        ROUND(a.price_amount/c2.funding_total) AS part
+FROM acquisition AS a
+JOIN company AS c ON c.id=a.acquiring_company_id
+JOIN company AS c2 ON c2.id=a.acquired_company_id
+WHERE a.price_amount <> 0 AND c2.funding_total <> 0
+ORDER BY a.price_amount DESC, c2.name
+LIMIT 10;
+
+Выгрузите таблицу, в которую войдут названия компаний из категории social, получившие финансирование с 2010 по 2013 год. 
+Выведите также номер месяца, в котором проходил раунд финансирования.
+
+SELECT c.name, EXTRACT(Month FROM CAST(fr.funded_at as timestamp))
+FROM company as c
+INNER JOIN funding_round as fr ON c.id = fr.company_id
+WHERE category_code = 'social' and fr.funding_round_type = "series_a" and EXTRACT(YEAR FROM CAST(fr.funded_at as timestamp)) BETWEEN 2010 and 2013
+
+
+WITH
+id AS (SELECT id, name
+    FROM company),
+bs AS (SELECT acquiring_company_id,
+       acquired_company_id,
+       price_amount AS price
+    FROM acquisition
+    WHERE price_amount <> 0),
+invest AS (SELECT company_id AS s_id,
+    SUM(raised_amount) AS invested
+    FROM funding_round
+    GROUP BY company_id
+    HAVING SUM(raised_amount) <> 0)
+ 
+SELECT n1.name,
+       bs.price,
+       n2.name,
+       invest.invested,
+       ROUND(bs.price/invest.invested)
+FROM bs
+LEFT JOIN invest ON bs.acquired_company_id = invest.s_id
+LEFT JOIN id AS n1 ON bs.acquiring_company_id = n1.id
+LEFT JOIN id AS n2 ON bs.acquired_company_id = n2.id
+WHERE invest.invested IS NOT NULL
+ORDER BY bs.price DESC, n2.name
+LIMIT 10;
+
+
+Выгрузите таблицу, в которую войдут названия компаний из категории social, получившие финансирование с 2010 по 2013 год. 
+Выведите также номер месяца, в котором проходил раунд финансирования.
+
+SELECT c.name, EXTRACT(Month FROM CAST(fr.funded_at as timestamp))
+FROM company as c
+INNER JOIN funding_round as fr ON c.id = fr.company_id
+WHERE c.category_code = 'social' and EXTRACT(YEAR FROM CAST(fr.funded_at as timestamp)) BETWEEN 2010 and 2013;
+
+Отберите данные по месяцам с 2010 по 2013 год, когда проходили инвестиционные раунды. Сгруппируйте данные по номеру месяца и получите таблицу, в которой будут поля:
+номер месяца, в котором проходили раунды;
+количество уникальных названий фондов из США, которые инвестировали в этом месяце;
+количество компаний, купленных за этот месяц;
+общая сумма сделок по покупкам в этом месяце.
+
+WITH 
+
+month_fund AS (SELECT EXTRACT(MONTH FROM fr.funded_at) AS MONTH,
+          COUNT(DISTINCT f.name) AS count_of_fund
+               FROM funding_round AS fr
+               LEFT JOIN investment AS i ON i.funding_round_id = fr.id
+               LEFT JOIN fund AS f ON i.fund_id = f.id
+               WHERE EXTRACT(YEAR FROM fr.funded_at) BETWEEN 2010 AND 2013
+               AND f.country_code = 'USA' 
+               GROUP BY MONTH),
+month_acquired AS (SELECT EXTRACT(MONTH
+                   FROM acquired_at) AS MONTH,
+                   COUNT(acquired_company_id) AS count_of_acquired,
+                   SUM(price_amount) AS sum_of_acquired
+                   FROM acquisition
+                   WHERE EXTRACT(YEAR
+                   FROM acquired_at) BETWEEN 2010 AND 2013
+                   GROUP BY MONTH)
+
+SELECT month_fund.month,
+       month_fund.count_of_fund,
+       month_acquired.count_of_acquired,
+       month_acquired.sum_of_acquired
+FROM month_fund
+JOIN month_acquired ON month_fund.month = month_acquired.month;
+
+Составьте сводную таблицу и выведите среднюю сумму инвестиций для стран, в которых есть стартапы, зарегистрированные в 2011, 2012 и 2013 годах. 
+Данные за каждый год должны быть в отдельном поле. Отсортируйте таблицу по среднему значению инвестиций за 2011 год от большего к меньшему.
+
+WITH 
+
+a as (SELECT country_code, 
+    AVG(funding_total) as avg_2011
+    FROM company
+    WHERE EXTRACT(YEAR FROM CAST(founded_at as timestamp)) = 2011
+    GROUP BY country_code),
+    
+b as (SELECT country_code, 
+    AVG(funding_total) as avg_2012
+    FROM company
+    WHERE EXTRACT(YEAR FROM CAST(founded_at as timestamp)) = 2012
+    GROUP BY country_code),
+    
+c as (SELECT country_code, 
+    AVG(funding_total) as avg_2013
+    FROM company
+    WHERE EXTRACT(YEAR FROM CAST(founded_at as timestamp)) = 2013
+    GROUP BY country_code)
+    
+    
+SELECT a.country_code,
+    a.avg_2011,
+    b.avg_2012,
+    c.avg_2013
+FROM a
+INNER JOIN b ON a.country_code = b.country_code
+INNER JOIN c ON a.country_code = c.country_code
+ORDER BY a.avg_2011 DESC;
+
+Выведите записи с 8 по 10 из таблицы track
+
+SELECT *
+FROM track
+LIMIT 3 
+OFFSET 7;

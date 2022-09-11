@@ -1,0 +1,706 @@
+SELECT *
+FROM public.table_name; 
+
+Исследование данных: теория
+В этом курсе вы будете работать с данными интернет-магазина. В этой базе данных две схемы: online_store и tools_shop — по одной для каждого отдела магазина. 
+В этом уроке вы познакомитесь с таблицами схемы online_store. Данными этой схемы вы будете пользоваться в теоретической части курса.
+
+user_id	Идентификатор пользователя, первичный ключ таблицы
+first_ts	Дата и время первого посещения
+channel	Канал привлечения
+device	Тип устройства пользователя
+region	Регион пользователя
+dt	Дата первого посещения
+month	Месяц первого посещения
+payer	Поле хранит информацию о том, совершал ли пользователь хотя бы одну покупку
+
+Канал, устройство и регион пользователя определяются по первому посещению. Каналов может быть три:
+Yandex — платное привлечение пользователей через Яндекс Директ;
+Organic — органический трафик из поисковых систем;
+AnotherSource — остальные источники.
+
+Таблица sessions
+Cодержит данные о сессиях пользователей на сайте магазина.
+Поле	Описание
+user_id	Идентификатор пользователя
+region	Регион посещения
+channel	Канал сессии
+device	Тип устройства сессии
+session_duration	Длительность сессии в секундах
+session_start	Дата и время старта сессии
+
+Таблица events
+Таблица содержит данные о событиях. Событиями в бизнесе могут быть разные действия компании и пользователей. 
+Например, компания может отправлять пользователям рассылки, и такое действие считают событием. Пользователи, в свою очередь, 
+могут регистрироваться на сайте, просматривать конкретные страницы и переходить к оплате товара — всё это события.
+
+В таблице events схемы online_store событием является рассылка, которую интернет-магазин отправляет своим пользователям.
+Поле	Описание
+user_id	Идентификатор пользователя
+event_dt	Дата и время события
+event_name	Название события
+Типов рассылки в поле event_name всего два:
+onboarding — обязательная рассылка для каждого пользователя, которую отправляют самой первой и только один раз;
+sale_offer — рассылка пользователям специальных предложений.
+
+Таблица orders
+Содержит данные о заказах клиентов.
+Поле	Описание
+user_id	Идентификатор пользователя, первичный ключ таблицы
+event_dt	Дата и время оформления заказа
+revenue	Сумма заказа
+
+Таблица costs
+Содержит данные о стоимости привлечения новых пользователей.
+Поле	Описание
+dt	Дата
+channel	Канал привлечения
+costs	Стоимость привлечения
+
+Рассчитайте LTV для схемы tools_shop за весь период.
+
+SELECT SUM(total_amt) / COUNT(DISTINCT user_id) AS ltv
+FROM tools_shop.orders; 
+
+Добавьте группировку по месяцу создания аккаунта клиента, используя функцию DATE_TRUNC().
+Дополните предыдущий запрос:
+Присоедините к orders таблицу с данными пользователей.
+Усеките дату создания аккаунта до месяца и сгруппируйте таблицу по этому полю.
+В итоговую таблицу должны войти два поля: месяц создания аккаунта и значение LTV за текущий месяц.
+
+SELECT CAST(DATE_TRUNC('month', u.created_at) AS date) as month, 
+    SUM(o.total_amt) / COUNT(DISTINCT o.user_id) AS ltv
+FROM tools_shop.orders as o
+JOIN tools_shop.users as u ON o.user_id = u.user_id
+GROUP BY month;
+
+Существует несколько способов преобразовать тип данных:
+использовать оператор CAST и явно указать тип данных: SELECT CAST(column_name AS numeric);
+умножить на другое число с типом numeric: SELECT column_name * 1.0;
+использовать оператор :: и явно указать тип данных: SELECT column_name::numeric.
+Преобразования с оператором :: работают со всеми типам данных PostgreSQL: SELECT '5999-01-01'::date, 100.0::integer, 'true'::boolean.
+На практике часто применяют все три способа, и вам они ещё встретятся в уроках, но самый предпочтительный из них — использовать оператор CAST. Причин для этого две:
+Использование оператора :: не соответствует общим стандартам SQL — такой способ доступен только в PostgreSQL.
+
+Напишите запрос, который выведет общую конверсию из пользователя в клиента для схемы tools_shop. Результат округлите до одного знака после запятой.
+
+SELECT ROUND(COUNT(DISTINCT o.user_id) * 100.0 / COUNT(DISTINCT u.user_id), 2)
+FROM tools_shop.users u
+LEFT JOIN tools_shop.orders o ON u.user_id = o.user_id; 
+
+Рассчитайте метрику ARPU для схемы tools_shop.
+
+SELECT SUM(o.total_amt) / COUNT(DISTINCT(u.user_id)) AS arpu
+FROM tools_shop.orders o
+RIGHT JOIN tools_shop.users u ON o.user_id = u.user_id; 
+
+Добавьте разрез по дате оформления заказа в запрос из теории.
+
+SELECT CAST(o.event_dt AS date) as date,
+SUM(o.revenue) / COUNT(p.user_id) AS arppu
+FROM online_store.orders o
+JOIN online_store.profiles p ON o.user_id = p.user_id
+GROUP BY date;
+
+Используя функцию DATE_TRUNC(), рассчитайте ARPPU в разрезе года оформления заказа. Поле с датой приведите к типу данных date, 
+а значение ARPPU округлите до двух знаков после запятой.
+
+SELECT CAST(DATE_TRUNC('year', o.created_at) AS date) as year,
+ROUND(SUM(o.total_amt) / COUNT(DISTINCT(o.user_id)), 2) AS arppu
+FROM tools_shop.orders o
+JOIN tools_shop.users u ON o.user_id = u.user_id
+GROUP BY year;
+
+Для начала рассчитайте выручку в динамике по месяцам, используя функцию DATE_TRUNC(). Поле c датой приведите к типу данных date. Поля можете переименовать по-своему.
+
+SELECT CAST(DATE_TRUNC('month', created_at) AS date) as dt,
+       SUM(total_amt) AS revenue
+FROM tools_shop.orders
+GROUP BY dt;
+
+Теперь нужно рассчитать стоимость привлечения пользователей в динамике по месяцам.
+
+SELECT CAST(DATE_TRUNC('month', created_at) AS date) as dt,
+       SUM(costs) AS costs
+FROM tools_shop.costs
+GROUP BY dt;
+
+Теперь нужно соединить два подзапроса по дате. Обратите внимание, что в условии, по которому вы присоединяете таблицы или подзапросы, лучше указывать поля с одинаковыми типами данных. В противном случае СУБД попробует преобразовать один тип данных в другой. Такое неявное преобразование может привести к ошибке, поэтому лучше указать нужный тип данных самостоятельно.
+Добавьте подзапросам псевдонимы и соедините их. Затем выведите ROI в динамике по месяцам.
+
+SELECT dc.dt,
+       total_amt * 100 / costs AS ROI-- добавьте нужные поля и расчёты
+FROM
+(SELECT DATE_TRUNC('month', created_at)::date AS dt,
+       SUM(costs) AS costs
+FROM tools_shop.costs
+GROUP BY dt) dc
+JOIN 
+(SELECT DATE_TRUNC('month', created_at)::date AS dt,
+       SUM(total_amt) AS total_amt
+FROM tools_shop.orders
+GROUP BY dt) dr ON dc.dt = dr.dt;
+
+Напишите запрос, который выведет все поля таблицы tools_shop.orders и отдельным полем суммарную стоимость всех заказов.
+
+SELECT *,
+SUM(total_amt) OVER ()
+FROM tools_shop.orders;
+
+Напишите запрос, который выведет все поля таблицы tools_shop.users и отдельным полем количество пользователей в этой таблице.
+
+SELECT *,
+count(user_id) OVER ()
+FROM tools_shop.users;
+
+Напишите запрос, который выведет все поля таблицы tools_shop.orders и отдельным полем суммарную стоимость заказов для каждого пользователя.
+
+SELECT *,
+       SUM(total_amt) OVER (PARTITION BY user_id)
+FROM tools_shop.orders; 
+
+Напишите запрос, который выведет все поля таблицы tools_shop.orders и отдельным полем суммарную стоимость заказов за каждый месяц.
+
+SELECT *,
+       SUM(total_amt) OVER (PARTITION BY DATE_TRUNC('month', created_at)::date)
+FROM tools_shop.orders; 
+
+Выведите все поля таблицы tools_shop.items, добавив поле с рангом записи.
+
+SELECT *,
+       ROW_NUMBER() OVER ()
+FROM tools_shop.items; 
+
+Выведите все поля таблицы tools_shop.orders, добавив поле с рангом записи.
+
+SELECT *,
+       ROW_NUMBER() OVER ()
+FROM tools_shop.orders; 
+
+Проранжируйте записи в таблице tools_shop.users по дате регистрации — от меньшей к большей. Напишите запрос, который выведет идентификатор пользователя с рангом 2021.
+
+with dt as (SELECT *, 
+       ROW_NUMBER() OVER (ORDER BY created_at) as rn
+FROM tools_shop.users)
+
+SELECT user_id
+FROM dt
+WHERE rn = 2021;
+
+Проранжируйте записи в таблице tools_shop.orders по дате оплаты заказа — от большей к меньшей. Напишите запрос, который выведет стоимость заказа с рангом 50.
+
+with dt as (SELECT *, 
+       ROW_NUMBER() OVER (ORDER BY paid_at DESC) as rn
+FROM tools_shop.orders)
+
+SELECT total_amt
+FROM dt
+WHERE rn = 50;
+
+Проранжируйте записи в таблице tools_shop.order_x_item в зависимости от значения item_id — от меньшего к большему. 
+Записи с одинаковым item_id должны получить один ранг. Ранги можно указать непоследовательно.
+
+SELECT *, 
+       RANK() OVER (ORDER BY item_id)
+FROM tools_shop.order_x_item; 
+
+Проранжируйте записи в таблице tools_shop.users в зависимости от значения в поле created_at — от большего к меньшему. 
+Записи с одинаковым значением created_at должны получить один ранг. Ранги должны быть указаны последовательно.
+
+SELECT *, 
+       DENSE_RANK() OVER (ORDER BY created_at DESC)
+FROM tools_shop.users; 
+
+Разбейте заказы из таблицы tools_shop.orders на десять групп, отсортировав их по значению суммы заказа по возрастанию.
+Выведите поля:
+идентификатор заказа;
+сумма заказа;
+ранг группы.
+
+SELECT order_id, total_amt,
+       NTILE(10) OVER (ORDER BY total_amt)
+FROM tools_shop.orders;
+
+Разбейте пользователей в таблице tools_shop.users на пять групп так, чтобы в первую группу попали пользователи, которые недавно зарегистрировались.
+Выгрузите поля:
+идентификатор пользователя;
+дата регистрации;
+ранг группы.
+
+SELECT user_id, created_at,
+       NTILE(5) OVER (ORDER BY CAST(created_at as date) DESC)
+FROM tools_shop.users;
+				  
+Выведите все поля таблицы tools_shop.orders и проранжируйте заказы для каждого клиента в зависимости от даты оплаты заказа — от меньшей к большей.
+
+SELECT *,
+          ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY paid_at) AS rn
+   FROM tools_shop.orders;
+   
+Выведите все поля таблицы tools_shop.events и проранжируйте события для каждого клиента в зависимости от его даты — от большей к меньшей.
+
+SELECT *,
+          ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY event_time DESC) AS rn
+FROM tools_shop.events;
+
+Рассчитайте общее количество заказов в таблице tools_shop.orders по дням. Выведите все поля таблицы и новое поле с количеством заказов.
+
+SELECT *,
+    COUNT(order_id) OVER(PARTITION BY DATE_TRUNC('day', created_at)::date)
+FROM tools_shop.orders;
+
+Рассчитайте общую выручку в таблице tools_shop.orders по месяцам. Выведите все поля таблицы и новое поле с суммой выручки.
+
+SELECT *,
+    SUM(total_amt) OVER(PARTITION BY DATE_TRUNC('month', created_at)::date)
+FROM tools_shop.orders;
+
+Напишите запрос к таблице tools_shop.orders, который выведет:
+дату и время заказа created_at;
+сумму заказа total_amt;
+сумму заказа с накоплением, отсортированную по возрастанию даты заказа.
+
+SELECT created_at,
+       total_amt,
+       SUM(total_amt) OVER (ORDER BY created_at) 
+FROM tools_shop.orders; 
+
+Напишите запрос к таблице tools_shop.orders, который выведет:
+идентификатор пользователя user_id;
+дату и время заказа created_at;
+сумму заказа total_amt;
+сумму заказа с накоплением для каждого пользователя, отсортированную по возрастанию даты заказа.
+
+SELECT user_id,
+       created_at,
+       total_amt,
+       SUM(total_amt) OVER (PARTITION BY user_id ORDER BY created_at) 
+FROM tools_shop.orders; 
+
+Напишите запрос к таблице tools_shop.orders, который выведет:
+месяц заказа, приведённый к типу date;
+сумму заказа total_amt;
+сумму заказа с накоплением, отсортированную по возрастанию месяца оформления заказа.
+
+SELECT DATE_TRUNC('month', created_at)::date,
+       total_amt,
+       SUM(total_amt) OVER (ORDER BY DATE_TRUNC('month', created_at)::date)
+FROM tools_shop.orders; 
+
+Из таблицы tools_shop.orders выведите поля order_id, user_id, paid_at и к ним добавьте поле paid_at с датой предыдущего заказа для каждого пользователя. 
+Если предыдущего заказа нет, выведите дату 1 января 1980 года.
+
+SELECT order_id,
+       user_id,
+       paid_at,
+       LAG(paid_at, 1, '1980-01-01') OVER (PARTITION BY user_id ORDER BY paid_at)
+FROM tools_shop.orders;
+
+Выведите поля event_id, event_time, user_id из таблицы tools_shop.events и к ним добавьте поле с датой и временем следующего события для каждого пользователя. 
+Если события нет, оставьте значение NULL.
+
+SELECT event_id,
+       event_time,
+       user_id,
+       LEAD(event_time) OVER (PARTITION BY user_id ORDER BY event_time)
+FROM tools_shop.events;
+
+Напишите запрос, который проранжирует расходы на привлечение пользователей за каждый день по убыванию.
+Выгрузите три поля:
+дата, которую нужно привести к типу date;
+расходы на привлечение;
+ранг строки.
+
+SELECT created_at :: date,
+       costs,
+       ROW_NUMBER() OVER (ORDER BY costs DESC) as rn
+FROM tools_shop.costs;
+
+Измените предыдущий запрос: записям с одинаковыми значениями расходов назначьте одинаковый ранг. Ранги не должны прерываться.
+
+SELECT created_at :: date,
+       costs,
+       DENSE_RANK() OVER (ORDER BY costs DESC) as rn
+FROM tools_shop.costs;
+
+Используя оконную функцию, выведите список уникальных user_id пользователей, которые совершили три заказа и более.
+
+WITH a AS (SELECT user_id,
+       ROW_NUMBER() OVER (PARTITION BY user_id) as rn
+FROM tools_shop.orders)
+
+SELECT DISTINCT user_id
+FROM a
+WHERE rn >= 3;
+
+Используя оконную функцию, выведите количество заказов, в которых было четыре товара и более.
+
+WITH a AS (SELECT order_id,
+       ROW_NUMBER() OVER (PARTITION BY order_id) as rn
+FROM tools_shop.order_x_item)
+
+SELECT COUNT(order_id)
+FROM a
+WHERE rn >= 4;
+
+Рассчитайте количество зарегистрированных пользователей по месяцам с накоплением.
+Выгрузите два поля:
+месяц регистрации, приведённый к типу date;
+общее количество зарегистрированных пользователей на текущий месяц.
+
+SELECT DISTINCT
+       DATE_TRUNC('month', created_at) :: date as month,
+       COUNT(user_id) OVER (ORDER BY DATE_TRUNC('month', created_at) :: date)
+FROM tools_shop.users;
+
+Рассчитайте сумму трат на привлечение пользователей с накоплением по месяцам c 2017 по 2018 год включительно.
+Выгрузите два поля:
+месяц, приведённый к типу date;
+сумма трат на текущий месяц с накоплением.
+
+SELECT DISTINCT
+       DATE_TRUNC('month', created_at) :: date as month,
+       SUM(costs) OVER (ORDER BY DATE_TRUNC('month', created_at) :: date)
+FROM tools_shop.costs
+WHERE EXTRACT(YEAR FROM CAST(created_at AS timestamp)) BETWEEN 2017 and 2018;
+
+Посчитайте события с названием view_item по месяцам с накоплением. Рассчитайте количество событий только для тех пользователей, которые совершили хотя бы одну покупку.
+Выгрузите поля:
+месяц события, приведённый к типу date;
+количество событий за текущий месяц;
+количество событий за текущий месяц с накопление
+
+with a AS (SELECT DATE_TRUNC('month', e.event_time) :: date as month,
+       COUNT(distinct e.event_id) as count
+FROM tools_shop.events as e
+JOIN tools_shop.orders as o ON o.user_id = e.user_id
+WHERE e.event_name = 'view_item' and paid_at is not NULL
+GROUP BY month)
+
+SELECT DISTINCT month, count,
+       SUM(count) OVER (ORDER BY month)
+from a
+ORDER BY month;
+
+Используя конструкцию WINDOW, рассчитайте суммарную стоимость и количество заказов с накоплением от месяца к месяцу.
+Выгрузите поля:
+идентификатор заказа;
+месяц оформления заказа, приведённый к типу date;
+сумма заказа;
+количество заказов с накоплением;
+суммарная стоимость заказов с накоплением.
+
+SELECT order_id,
+       DATE_TRUNC('month', created_at):: date as month,
+       total_amt, 
+       COUNT(order_id) OVER my_window,
+       SUM(total_amt) OVER my_window
+FROM tools_shop.orders
+WINDOW my_window AS (ORDER BY DATE_TRUNC('month', created_at):: date)
+ORDER BY month;
+
+Напишите запрос, который выведет сумму трат на привлечение пользователей по месяцам, а также разницу в тратах между текущим и предыдущим месяцами. 
+Разница должна показывать, на сколько траты текущего месяца отличаются от предыдущего. В случае, если данных по предыдущему месяцу нет, укажите ноль.
+Выгрузите поля:
+месяц, приведённый к типу date;
+траты на привлечение пользователей в текущем месяце;
+разница в тратах между текущим и предыдущим месяцами.
+
+WITH a AS (SELECT DISTINCT DATE_TRUNC('month', created_at):: date as month,
+       SUM(costs) as month_cost
+FROM tools_shop.costs
+GROUP BY month)
+
+SELECT month, month_cost,
+       month_cost - LAG(month_cost, 1, month_cost) OVER (ORDER BY month)
+FROM a;
+
+Напишите запрос, который выведет сумму выручки по годам и разницу выручки между текущим и следующим годом. Разница должна показывать, на сколько выручка следующего года отличается от текущего. В случае, если данных по следующему году нет, укажите ноль.
+Выгрузите поля:
+год, приведённый к типу date;
+выручка за текущий год;
+разница в выручке между текущим и следующим годом.
+
+WITH a AS (SELECT DISTINCT DATE_TRUNC('year', created_at):: date as year,
+       SUM(total_amt) as yr_revenue
+FROM tools_shop.orders
+GROUP BY year)
+
+SELECT year, yr_revenue,
+       LEAD(yr_revenue, 1, yr_revenue) OVER (ORDER BY year) - yr_revenue
+FROM a;
+
+Напишите запрос для определения профиля пользователя: выведите список идентификаторов клиентов, которые совершили хотя бы одну покупку.
+
+SELECT DISTINCT user_id 
+FROM tools_shop.orders
+GROUP BY user_id
+HAVING count(order_id) >= 1;
+
+Добавьте к предыдущему запросу месяц первого события, используя функцию DATE_TRUNC(). Приведите поле к типу date. Эта дата будет началом когорты.
+
+SELECT o.user_id, min(DATE_TRUNC('month', e.event_time)::date)
+    FROM tools_shop.orders as o
+    JOIN tools_shop.events as e ON o.user_id = e.user_id
+    GROUP BY o.user_id
+    HAVING count(o.order_id) >= 1;
+	
+или 
+
+SELECT u.user_id,
+          DATE_TRUNC('month', MIN(event_time))::date AS dt
+   FROM tools_shop.users u
+   JOIN tools_shop.orders o ON u.user_id = o.user_id
+   JOIN tools_shop.events e ON u.user_id = e.user_id
+   GROUP BY 1
+	
+Следующий шаг — определить, было ли у пользователей хотя бы одно событие в каждом месяце. 
+Напишите запрос, который выведет все уникальные комбинации user_id и значения месяца события для выбранных пользователей. 
+Не забудьте добавить запрос из предыдущего задания во временную таблицу.
+
+with a as (SELECT o.user_id, min(DATE_TRUNC('month', e.event_time)::date) as dt
+    FROM tools_shop.orders as o
+    JOIN tools_shop.events as e ON o.user_id = e.user_id
+    GROUP BY o.user_id
+    HAVING count(o.order_id) >= 1)
+    
+SELECT DISTINCT e.user_id, DATE_TRUNC('month', e.event_time)::date
+FROM a
+JOIN tools_shop.events e ON e.user_id = a.user_id;
+
+Следующий шаг — найти общее количество пользователей для каждой когорты. Используйте временную таблицу из прошлых заданий. 
+Напишите запрос, который выведет дату старта когорты и количество пользователей в ней. Оставьте в таблице только уникальные значения.
+
+WITH profile AS
+  (SELECT u.user_id,
+          DATE_TRUNC('month', MIN(event_time))::date AS dt
+   FROM tools_shop.users u
+   JOIN tools_shop.orders o ON u.user_id = o.user_id
+   JOIN tools_shop.events e ON u.user_id = e.user_id
+   GROUP BY 1)
+   
+SELECT dt,
+	   COUNT(user_id) AS cohort_users_cnt
+FROM profile
+GROUP BY 1;
+
+Все данные для расчётов добавлены во временные таблицы. Остаётся их правильно объединить и рассчитать Retention Rate.
+Выведите в запросе несколько полей:
+месяц старта когорты,
+месяц события,
+общее количество пользователей когорты,
+количество пользователей в этот месяц,
+Retention Rate.
+Значение Retention Rate округлите до двух знаков после запятой.
+
+WITH 
+profile AS
+  (SELECT u.user_id,
+          DATE_TRUNC('month', MIN(event_time))::date AS dt
+   FROM tools_shop.users u
+   JOIN tools_shop.orders o ON u.user_id = o.user_id
+   JOIN tools_shop.events e ON u.user_id = e.user_id
+   GROUP BY 1), 
+   
+sessions AS
+  (SELECT p.user_id,
+          DATE_TRUNC('month', event_time)::date AS session_dt
+   FROM tools_shop.events e
+   JOIN profile p ON p.user_id = e.user_id
+   GROUP BY 1,
+            2),
+            
+cohort_users_cnt AS
+  (SELECT dt,
+          COUNT(user_id) AS cohort_users_cnt
+   FROM profile
+   GROUP BY 1)
+   
+SELECT p.dt, session_dt, cohort_users_cnt, 
+    COUNT(p.user_id) AS users_cnt,
+    ROUND(COUNT(s.user_id) * 100.0 / cohort_users_cnt, 2) AS retention_rate
+FROM profile as p
+JOIN sessions as s ON p.user_id = s.user_id
+JOIN cohort_users_cnt as c ON s.session_dt = c.dt
+GROUP BY 1, 2, 3
+
+or 
+
+GROUP BY p.dt, session_dt, cohort_users_cnt
+
+
+Сначала определите профиль пользователя. Напишите запрос, который выведет пользователей, зарегистрировавшихся в 2019 году и совершивших хотя бы одну покупку.
+Выведите два поля:
+идентификатор пользователя;
+дата регистрации пользователя.
+
+SELECT DISTINCT u.user_id, u.created_at::date AS first_session_dt
+FROM tools_shop.users u
+JOIN tools_shop.orders o ON u.user_id = o.user_id
+JOIN tools_shop.events e ON u.user_id = e.user_id
+GROUP BY 1, 2
+HAVING EXTRACT(YEAR FROM u.created_at::date) = 2019;
+
+Следующий шаг — определить лайфтайм для каждой покупки и месяц регистрации пользователя. 
+Преобразуйте предыдущий запрос таким образом, чтобы от даты регистрации остался месяц с типом date. Добавьте в запрос лайфтайм — количество месяцев с момента регистрации для каждого заказа.
+
+WITH 
+profile AS (
+    SELECT DISTINCT u.user_id, 
+    u.created_at::date AS first_session_dt
+FROM tools_shop.users u
+JOIN tools_shop.orders o ON u.user_id = o.user_id
+JOIN tools_shop.events e ON u.user_id = e.user_id
+GROUP BY 1, 2
+HAVING EXTRACT(YEAR FROM u.created_at::date) = 2019)
+
+SELECT p.user_id, DATE_TRUNC('month', p.first_session_dt)::date AS dt,
+       EXTRACT(MONTH FROM AGE(o.created_at, p.first_session_dt)) AS lifetime
+FROM profile p
+JOIN tools_shop.orders o ON p.user_id = o.user_id; 
+
+Добавьте в предыдущий запрос суммарную стоимость заказов с накоплением для каждого пользователя.
+
+WITH 
+profile AS (
+    SELECT DISTINCT u.user_id, 
+    u.created_at::date AS first_session_dt
+FROM tools_shop.users u
+JOIN tools_shop.orders o ON u.user_id = o.user_id
+JOIN tools_shop.events e ON u.user_id = e.user_id
+GROUP BY 1, 2
+HAVING EXTRACT(YEAR FROM u.created_at::date) = 2019)
+
+SELECT p.user_id, DATE_TRUNC('month', p.first_session_dt)::date AS dt,
+       EXTRACT(MONTH FROM AGE(o.created_at, p.first_session_dt)) AS lifetime,
+       SUM(o.total_amt) OVER (PARTITION BY p.user_id ORDER BY o.created_at)
+FROM profile p
+JOIN tools_shop.orders o ON p.user_id = o.user_id; 
+
+или
+
+SELECT u.user_id, 
+	date_trunc('month',u.created_at)::date as reg_date,
+	EXTRACT(MONTH FROM AGE(o.created_at,u.created_at) ) AS lifetime,
+	SUM(o.total_amt) OVER (PARTITION BY u.user_id ORDER BY o.created_at) AS ltv
+FROM tools_shop.users as u
+INNER JOIN tools_shop.orders o ON u.user_id = o.user_id
+WHERE EXTRACT(YEAR FROM u.created_at::date) = 2019;
+
+Добавьте предыдущий запрос во временную таблицу.
+Выведите три поля:
+месяц регистрации пользователя с типом date;
+лайфтайм;
+среднее значение ltv, округлённое до двух знаков после запятой.
+В запрос добавьте срез по условию задачи — необходимо вывести данные только за первые шесть месяцев с момента регистрации пользователя.
+
+WITH 
+profile AS (
+    SELECT DISTINCT u.user_id, 
+    u.created_at::date AS first_session_dt
+FROM tools_shop.users u
+JOIN tools_shop.orders o ON u.user_id = o.user_id
+JOIN tools_shop.events e ON u.user_id = e.user_id
+GROUP BY 1, 2
+HAVING EXTRACT(YEAR FROM u.created_at::date) = 2019),
+
+ltv AS (
+    SELECT p.user_id, DATE_TRUNC('month', p.first_session_dt)::date AS dt,
+       EXTRACT(MONTH FROM AGE(o.created_at, p.first_session_dt)) AS lifetime,
+       SUM(o.total_amt) OVER (PARTITION BY p.user_id ORDER BY o.created_at) as ltv
+FROM profile p
+JOIN tools_shop.orders o ON p.user_id = o.user_id)
+
+SELECT dt, lifetime, ROUND(AVG(ltv), 2)
+FROM ltv as l
+JOIN profile as p ON l.user_id = p.user_id
+GROUP BY 1, 2
+HAVING lifetime <=5;
+
+Сначала определите профиль пользователя: выведите идентификаторы клиентов, которые совершили хотя бы одну покупку.
+
+SELECT DISTINCT u.user_id
+FROM tools_shop.users u
+JOIN tools_shop.orders o ON u.user_id = o.user_id
+JOIN tools_shop.events e ON u.user_id = e.user_id
+GROUP BY 1;
+
+Добавьте к предыдущему запросу месяц первого события, используя функцию DATE_TRUNC(). Приведите поле к типу date. Эта дата будет началом когорты.
+
+SELECT DISTINCT u.user_id,
+    DATE_TRUNC('month', MIN(event_time))::date AS dt
+FROM tools_shop.users u
+JOIN tools_shop.orders o ON u.user_id = o.user_id
+JOIN tools_shop.events e ON u.user_id = e.user_id
+GROUP BY 1;
+
+Следующий шаг — рассчитать количество пользователей в зависимости от месяца старта когорты и месяца действия. 
+Напишите запрос, который выведет месяц старта когорты, месяц события и количество уникальных пользователей, у которых было хотя бы одно событие.
+Не забудьте добавить запрос из предыдущего задания во временную таблицу.
+
+with
+
+profile AS (
+    SELECT DISTINCT u.user_id,
+        DATE_TRUNC('month', MIN(event_time))::date AS dt
+FROM tools_shop.users u
+JOIN tools_shop.orders o ON u.user_id = o.user_id
+JOIN tools_shop.events e ON u.user_id = e.user_id
+GROUP BY 1)
+
+SELECT p.dt, DATE_TRUNC('month', e.event_time)::date, COUNT(DISTINCT e.user_id)
+FROM profile p
+JOIN tools_shop.events e ON e.user_id = p.user_id
+GROUP BY 1, 2;
+
+
+Следующий шаг — найти количество пользователей за предыдущий месяц для каждой когорты. Напишите запрос, 
+который вместе с полями из прошлого запроса выведет новое поле с количеством пользователей за предыдущий месяц.
+Не забудьте добавить запрос из предыдущего задания во временную таблицу.
+
+with
+
+profile AS (
+    SELECT DISTINCT u.user_id,
+        DATE_TRUNC('month', MIN(event_time))::date AS dt
+FROM tools_shop.users u
+JOIN tools_shop.orders o ON u.user_id = o.user_id
+JOIN tools_shop.events e ON u.user_id = e.user_id
+GROUP BY 1),
+
+sessions AS (
+    SELECT p.dt AS start_dt, 
+    DATE_TRUNC('month', e.event_time)::date AS session_dt, 
+    COUNT(DISTINCT e.user_id) as users_cnt
+FROM profile p
+JOIN tools_shop.events e ON e.user_id = p.user_id
+GROUP BY 1, 2)
+
+SELECT *,
+       LAG(users_cnt) OVER (PARTITION BY start_dt ORDER BY session_dt) AS previous_day_users_cnt
+FROM sessions;
+
+Напишите запрос, который выведет все поля из предыдущего запроса и новое поле со значением Churn Rate в процентах. Округлите Churn Rate до двух знаков после запятой.
+
+with
+
+profile AS (
+    SELECT DISTINCT u.user_id,
+        DATE_TRUNC('month', MIN(event_time))::date AS dt
+FROM tools_shop.users u
+JOIN tools_shop.orders o ON u.user_id = o.user_id
+JOIN tools_shop.events e ON u.user_id = e.user_id
+GROUP BY 1),
+
+sessions AS (
+    SELECT p.dt AS start_dt, 
+    DATE_TRUNC('month', e.event_time)::date AS session_dt, 
+    COUNT(DISTINCT e.user_id) as users_cnt
+FROM profile p
+JOIN tools_shop.events e ON e.user_id = p.user_id
+GROUP BY 1, 2)
+
+SELECT *,
+       LAG(users_cnt) OVER (PARTITION BY start_dt ORDER BY session_dt) AS previous_day_users_cnt,
+       ROUND((1 - (users_cnt::numeric/ LAG(users_cnt) OVER (PARTITION BY start_dt ORDER BY session_dt)))*100, 2) AS churn_rate
+FROM sessions;
